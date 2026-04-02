@@ -30,6 +30,7 @@ Responses from the AI API are cached in Redis using a hash of the input and cate
 ### Responsive Layout
 The UI adapts to both desktop and mobile viewports. On mobile, the notebook switches to a slide-in detail panel to make better use of limited screen space.
 
+
 ---
 
 ## Tech Stack
