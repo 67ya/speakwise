@@ -1,0 +1,142 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>英语句子练习</title>
+  <link rel="icon" type="image/svg+xml" href="favicon.svg">
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+<nav class="nav">
+  <div class="nav-brand">英语练习</div>
+  <div class="nav-tabs">
+    <button class="nav-tab active" data-view="practice">练习</button>
+    <button class="nav-tab" data-view="notebook">笔记本</button>
+  </div>
+</nav>
+
+<!-- 练习页 -->
+<div id="view-practice" class="view">
+  <div class="practice-wrap">
+    <h2>输入句子</h2>
+    <div class="input-label">回答的问题（可选）</div>
+    <textarea id="input-question" placeholder="这句话是在回答什么问题？" rows="2"></textarea>
+    <div class="input-label" style="margin-top:12px">英语句子</div>
+    <textarea id="input-sentence" placeholder="在此输入一个英语句子..." rows="4"></textarea>
+    <div class="submit-row">
+      <button id="btn-quick" class="btn btn-primary">快速分析</button>
+      <button id="btn-full"  class="btn btn-primary">完整分析</button>
+    </div>
+
+    <div id="loading" class="loading hidden">
+      <div class="spinner"></div>
+      <span>AI 正在分析，请稍候...</span>
+    </div>
+
+    <div id="result" class="result-card hidden">
+      <div class="result-section question-section" id="res-question-section">
+        <div class="section-label">问题</div>
+        <p id="res-question"></p>
+      </div>
+      <div class="result-section">
+        <div class="section-label">原句</div>
+        <p id="res-original"></p>
+      </div>
+      <div class="result-section" id="res-spoken-section">
+        <div class="section-label">口语版本</div>
+        <p id="res-spoken"></p>
+      </div>
+      <div class="result-section">
+        <div class="section-label">中文翻译</div>
+        <p id="res-translation"></p>
+      </div>
+      <div class="result-section">
+        <div class="section-label">词汇解析</div>
+        <div id="res-analysis" class="analysis-block"></div>
+      </div>
+      <div class="result-section corrections-section">
+        <div class="section-label">修改建议</div>
+        <div id="res-corrections" class="analysis-block"></div>
+      </div>
+      <div class="result-actions">
+        <select id="select-category" class="category-select"></select>
+        <button id="btn-save" class="btn btn-success">确认保存</button>
+        <button id="btn-cancel" class="btn btn-secondary">取消</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- 笔记本页 -->
+<div id="view-notebook" class="view hidden">
+  <div class="notebook-wrap">
+    <div class="nb-list">
+      <div class="nb-list-header">
+        <span>我的笔记</span>
+        <button id="btn-manage-cats" class="btn-manage">管理分类</button>
+      </div>
+      <div id="entries-list"></div>
+      <div id="empty-tip" class="empty-tip hidden">还没有保存的句子</div>
+    </div>
+    <div class="nb-detail">
+      <div id="detail-placeholder" class="detail-ph">← 选择左侧条目查看详情</div>
+      <div id="detail-content" class="hidden">
+        <div class="detail-section question-section" id="d-question-section">
+          <div class="section-label">问题</div>
+          <p id="d-question"></p>
+        </div>
+        <div class="detail-section">
+          <div class="section-label">原句</div>
+          <p id="d-original"></p>
+        </div>
+        <div class="detail-section" id="d-spoken-section">
+          <div class="section-label">口语版本</div>
+          <p id="d-spoken"></p>
+        </div>
+        <div class="detail-section">
+          <div class="section-label">中文翻译</div>
+          <p id="d-translation"></p>
+        </div>
+        <div class="detail-section">
+          <div class="section-label">词汇解析</div>
+          <div id="d-analysis" class="analysis-block"></div>
+        </div>
+        <div class="detail-section corrections-section">
+          <div class="section-label">修改建议</div>
+          <div id="d-corrections" class="analysis-block"></div>
+        </div>
+        <div class="detail-section">
+          <div class="section-label">所属分类</div>
+          <select id="d-category-select" class="category-select-inline"></select>
+        </div>
+        <div class="color-picker-row">
+          <span class="color-label">优先级标记：</span>
+          <div id="color-btns"></div>
+          <button class="color-clear-btn" id="btn-clear-color" title="清除颜色">✕</button>
+        </div>
+        <button id="btn-delete" class="btn btn-danger">删除此条目</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- 分类管理弹窗 -->
+<div id="modal-cats" class="modal-overlay hidden">
+  <div class="modal-box">
+    <div class="modal-header">
+      <span>管理分类</span>
+      <button id="modal-close" class="modal-close-btn">✕</button>
+    </div>
+    <div id="cat-list" class="cat-list"></div>
+    <div class="cat-add-row">
+      <input id="input-new-cat" class="cat-input" placeholder="输入新分类名称..." />
+      <button id="btn-add-cat" class="btn btn-primary">添加</button>
+    </div>
+  </div>
+</div>
+
+<script src="app.js"></script>
+</body>
+</html>

@@ -1,0 +1,26 @@
+# 密钥和证书
+.env
+*.pem
+appsettings.Local.json
+
+# 编译产物
+**/bin/
+**/obj/
+**/dist/
+**/node_modules/
+
+# 旧版数据文件
+data/
+
+# IDE
+.vs/
+.vscode/
+*.user
+
+# 日志
+*.log
+logs/
+
+# 打包文件
+*.tar.gz
+*.zip
