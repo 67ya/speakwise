@@ -10,7 +10,7 @@ appsettings.Local.json
 **/node_modules/
 
 # 旧版数据文件
-data/
+/data/
 
 # IDE
 .vs/
