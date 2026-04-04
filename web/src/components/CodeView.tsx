@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { analyzeCode } from '../api/code';
-import { createEntry } from '../api/entries';
+import { createEntry, getEntries } from '../api/entries';
 import type { Category } from '../types';
 
 interface CodeEntry {
@@ -57,6 +57,11 @@ export default function CodeView({ categories, defaultCategoryId, onSaved, showT
   const handleSave = async () => {
     if (!selected) return;
     if (!categoryId) { showToast('请先选择分类'); return; }
+    const existing = await getEntries();
+    const inCat = existing.filter(e => e.categoryId === parseInt(categoryId));
+    if (inCat.some(e => e.question === selected.code)) {
+      showToast('该代码已存在于笔记本'); return;
+    }
     await createEntry({
       question:    selected.code,
       original:    selected.summary,

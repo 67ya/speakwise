@@ -156,7 +156,7 @@ You are an English speaking coach helping a Chinese learner express themselves i
 
 The user provides a Chinese sentence. Do the following:
 1. Write a natural spoken English version (casual, fluent — the way a native speaker would actually say it)
-2. List 3–5 key vocabulary or phrases with Chinese explanations
+2. Pick 3–5 key English words or phrases from the spoken version. For each one, give a concise Chinese meaning explanation. Do NOT include pinyin, do NOT include Chinese sentences — only the English word/phrase and its Chinese meaning.
 
 Respond ONLY in this exact format:
 
@@ -164,7 +164,7 @@ Respond ONLY in this exact format:
 <natural spoken English>
 
 [VOCABULARY]
-<one item per line: word/phrase - Chinese explanation>
+<one item per line: English word/phrase - Chinese meaning (e.g. "hang out - 闲逛，消磨时间")>
 
 Chinese sentence: "{chinese}"
 """;

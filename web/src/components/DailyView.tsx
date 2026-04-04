@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { analyzeDaily, randomConversation } from '../api/daily';
-import { createEntry } from '../api/entries';
+import { createEntry, getEntries } from '../api/entries';
 import type { Category, DailyLine } from '../types';
 
 interface Props {
@@ -73,6 +73,11 @@ export default function DailyView({ categories, defaultCategoryId, onSaved, show
   const handleSave = async () => {
     if (!selected) return;
     if (!categoryId) { showToast('请先选择分类'); return; }
+    const existing = await getEntries();
+    const inCat = existing.filter(e => e.categoryId === parseInt(categoryId));
+    if (inCat.some(e => e.original === selected.chinese)) {
+      showToast('该句子已存在于笔记本'); return;
+    }
     await createEntry({
       question:    '',
       original:    selected.chinese,

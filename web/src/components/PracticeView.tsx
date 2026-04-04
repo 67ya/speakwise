@@ -1,6 +1,6 @@
 import { useState, useRef, useCallback } from 'react';
 import { analyze } from '../api/analyze';
-import { createEntry } from '../api/entries';
+import { createEntry, getEntries } from '../api/entries';
 import { useVoiceInput } from '../hooks/useVoiceInput';
 import type { Category, PendingEntry, PracticeType } from '../types';
 
@@ -86,6 +86,11 @@ export default function PracticeView({ categories, onSaved, showToast }: Props) 
   const handleSave = async () => {
     if (!result) return;
     if (!categoryId) { showToast('请先选择分类'); return; }
+    const existing = await getEntries();
+    const inCat = existing.filter(e => e.categoryId === parseInt(categoryId));
+    if (inCat.some(e => e.original === result.original)) {
+      showToast('该句子已存在于笔记本'); return;
+    }
     await createEntry({
       question:    result.question,
       original:    result.original,

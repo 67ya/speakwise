@@ -352,7 +352,7 @@ body {
   transform: translateY(-2px);
 }
 .flash-card--flipped {
-  cursor: default;
+  cursor: pointer;
 }
 .card-index {
   font-size: 11px;

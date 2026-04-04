@@ -90,7 +90,11 @@ export default function CardView({ categories, showToast }: Props) {
   }, [selectedCatId, passedToday, showToast]);
 
   const handleFlip = (id: number) => {
-    setFlipped(prev => { const n = new Set(prev); n.add(id); return n; });
+    setFlipped(prev => {
+      const n = new Set(prev);
+      n.has(id) ? n.delete(id) : n.add(id);
+      return n;
+    });
   };
 
   const handleColor = async (entry: Entry, color: string | null) => {
@@ -169,7 +173,7 @@ export default function CardView({ categories, showToast }: Props) {
   };
 
   return (
-    <div style={{ maxWidth: 900, margin: '0 auto' }}>
+    <div style={{ maxWidth: 900, margin: '0 auto', overflowY: 'auto', height: 'calc(100vh - 54px)' }}>
       <div className="card-toolbar">
         <select
           className="category-select-inline"
@@ -201,11 +205,11 @@ export default function CardView({ categories, showToast }: Props) {
               key={entry.id}
               className={`flash-card${isFlipped ? ' flash-card--flipped' : ''}`}
               style={color ? { backgroundColor: color, color: colorInfo?.text } : {}}
-              onClick={() => !isFlipped && handleFlip(entry.id)}
+              onClick={() => handleFlip(entry.id)}
             >
               <div className="card-index">#{i + 1}</div>
               <div className="card-front">{entry.original}</div>
-              {!isFlipped && <div className="card-hint">点击查看详情 ▼</div>}
+              <div className="card-hint">{isFlipped ? '点击折叠 ▲' : '点击查看详情 ▼'}</div>
 
               {isFlipped && (
                 <>
