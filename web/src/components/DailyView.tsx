@@ -86,6 +86,14 @@ export default function DailyView({ categories, defaultCategoryId, onSaved, show
     onSaved();
   };
 
+  const speak = (text: string) => {
+    if (window.speechSynthesis.speaking) { window.speechSynthesis.cancel(); return; }
+    const u = new SpeechSynthesisUtterance(text);
+    u.lang = 'en-US';
+    u.rate = 0.9;
+    window.speechSynthesis.speak(u);
+  };
+
   const renderBlock = (text: string) =>
     text.split('\n').filter(l => l.trim()).map((l, i) => <p key={i}>{l}</p>);
 
@@ -105,7 +113,10 @@ export default function DailyView({ categories, defaultCategoryId, onSaved, show
           </div>
 
           <div className="detail-section">
-            <div className="section-label">口语翻译</div>
+            <div className="section-label-row">
+              <div className="section-label">口语翻译</div>
+              <button className="btn-speak" onClick={() => speak(selected.spoken)} title="朗读英文">🔊</button>
+            </div>
             <p>{selected.spoken}</p>
           </div>
 
