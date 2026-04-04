@@ -4,6 +4,8 @@ import { getCategories } from '../api/categories';
 import CategoryModal from './CategoryModal';
 import type { Entry, Category } from '../types';
 
+const DAILY_CAT = '中英天天练';
+
 const PRIORITY_COLORS = [
   { label: 'P1 最低', value: '#E0E0E0', text: '#555' },
   { label: 'P2',      value: '#FFF59D', text: '#5D4037' },
@@ -91,9 +93,13 @@ export default function NotebookView({ refreshSignal, showToast }: Props) {
     return `${d.getFullYear()}-${pad(d.getMonth()+1)}-${pad(d.getDate())} ${pad(d.getHours())}:${pad(d.getMinutes())}`;
   };
 
-  const renderEntryItem = (entry: Entry, i: number) => {
-    const words = entry.original.split(' ').slice(0, 5).join(' ');
-    const preview = entry.original.split(' ').length > 5 ? words + '…' : words;
+  const renderEntryItem = (entry: Entry, i: number, catName?: string) => {
+    const isDaily = catName === DAILY_CAT;
+    const preview = isDaily
+      ? entry.original.slice(0, 15) + (entry.original.length > 15 ? '…' : '')
+      : (entry.original.split(' ').length > 5
+          ? entry.original.split(' ').slice(0, 5).join(' ') + '…'
+          : entry.original);
     const colorInfo = PRIORITY_COLORS.find(c => c.value === entry.color);
     return (
       <div
@@ -111,6 +117,9 @@ export default function NotebookView({ refreshSignal, showToast }: Props) {
     );
   };
 
+  const selectedCatName = categories.find(c => c.id === selected?.categoryId)?.name;
+  const isDailyEntry = selectedCatName === DAILY_CAT;
+
   const detailPanel = (
     <div className="nb-detail">
       {!selected ? (
@@ -120,34 +129,53 @@ export default function NotebookView({ refreshSignal, showToast }: Props) {
           {/* 手机端返回按钮 */}
           <button className="btn-back" onClick={backToList}>← 返回列表</button>
 
-          {selected.question && (
-            <div className="detail-section question-section">
-              <div className="section-label">问题</div>
-              <p>{selected.question}</p>
-            </div>
+          {isDailyEntry ? (
+            <>
+              <div className="detail-section">
+                <div className="section-label">中文原句</div>
+                <p>{selected.original}</p>
+              </div>
+              <div className="detail-section">
+                <div className="section-label">口语翻译</div>
+                <p>{selected.spoken}</p>
+              </div>
+              <div className="detail-section">
+                <div className="section-label">词汇解析</div>
+                <div className="analysis-block">{renderBlock(selected.analysis)}</div>
+              </div>
+            </>
+          ) : (
+            <>
+              {selected.question && (
+                <div className="detail-section question-section">
+                  <div className="section-label">问题</div>
+                  <p>{selected.question}</p>
+                </div>
+              )}
+              <div className="detail-section">
+                <div className="section-label">原句</div>
+                <p>{selected.original}</p>
+              </div>
+              {selected.spoken && (
+                <div className="detail-section">
+                  <div className="section-label">口语版本</div>
+                  <p>{selected.spoken}</p>
+                </div>
+              )}
+              <div className="detail-section">
+                <div className="section-label">中文翻译</div>
+                <p>{selected.translation}</p>
+              </div>
+              <div className="detail-section">
+                <div className="section-label">词汇解析</div>
+                <div className="analysis-block">{renderBlock(selected.analysis)}</div>
+              </div>
+              <div className="detail-section corrections-section">
+                <div className="section-label">修改建议</div>
+                <div className="analysis-block">{renderBlock(selected.corrections || '—')}</div>
+              </div>
+            </>
           )}
-          <div className="detail-section">
-            <div className="section-label">原句</div>
-            <p>{selected.original}</p>
-          </div>
-          {selected.spoken && (
-            <div className="detail-section">
-              <div className="section-label">口语版本</div>
-              <p>{selected.spoken}</p>
-            </div>
-          )}
-          <div className="detail-section">
-            <div className="section-label">中文翻译</div>
-            <p>{selected.translation}</p>
-          </div>
-          <div className="detail-section">
-            <div className="section-label">词汇解析</div>
-            <div className="analysis-block">{renderBlock(selected.analysis)}</div>
-          </div>
-          <div className="detail-section corrections-section">
-            <div className="section-label">修改建议</div>
-            <div className="analysis-block">{renderBlock(selected.corrections || '—')}</div>
-          </div>
           <div className="detail-section">
             <div className="section-label">所属分类</div>
             <select
@@ -205,7 +233,7 @@ export default function NotebookView({ refreshSignal, showToast }: Props) {
                   <span className="cat-name">{cat.name}</span>
                   <span className="cat-count">{catEntries.length}</span>
                 </div>
-                {isOpen && catEntries.map((entry, i) => renderEntryItem(entry, i))}
+                {isOpen && catEntries.map((entry, i) => renderEntryItem(entry, i, cat.name))}
               </div>
             );
           })}

@@ -75,9 +75,9 @@ export default function DailyView({ categories, defaultCategoryId, onSaved, show
     if (!categoryId) { showToast('请先选择分类'); return; }
     await createEntry({
       question:    '',
-      original:    selected.spoken,
-      spoken:      '',
-      translation: selected.chinese,
+      original:    selected.chinese,
+      spoken:      selected.spoken,
+      translation: '',
       analysis:    selected.vocabulary,
       corrections: '—',
       categoryId:  parseInt(categoryId),
