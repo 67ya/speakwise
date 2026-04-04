@@ -1,12 +1,13 @@
 import { useState, useEffect, useCallback } from 'react';
 import PracticeView from './components/PracticeView';
 import NotebookView from './components/NotebookView';
+import DailyView from './components/DailyView';
 import Toast from './components/Toast';
 import { useToast } from './hooks/useToast';
 import { getCategories } from './api/categories';
 import type { Category } from './types';
 
-type View = 'practice' | 'notebook';
+type View = 'practice' | 'notebook' | 'daily';
 
 export default function App() {
   const [view, setView]             = useState<View>('practice');
@@ -38,6 +39,10 @@ export default function App() {
             className={`nav-tab${view === 'notebook' ? ' active' : ''}`}
             onClick={() => { setView('notebook'); setRefreshSignal(s => s + 1); }}
           >笔记本</button>
+          <button
+            className={`nav-tab${view === 'daily' ? ' active' : ''}`}
+            onClick={() => setView('daily')}
+          >英语天天练</button>
         </div>
       </nav>
 
@@ -51,6 +56,13 @@ export default function App() {
       {view === 'notebook' && (
         <NotebookView
           refreshSignal={refreshSignal}
+          showToast={showToast}
+        />
+      )}
+      {view === 'daily' && (
+        <DailyView
+          categories={categories}
+          onSaved={handleSaved}
           showToast={showToast}
         />
       )}

@@ -172,6 +172,43 @@ body {
 .cat-input { flex: 1; height: 36px; padding: 0 10px; border: 2px solid #ddd; border-radius: 8px; font-size: 14px; font-family: inherit; outline: none; transition: border-color .2s; }
 .cat-input:focus { border-color: #3949AB; }
 
+/* ── Daily Practice ── */
+.daily-wrap { display: flex; height: calc(100vh - 54px); overflow: hidden; }
+
+.daily-left {
+  width: 380px; flex-shrink: 0;
+  background: #fff; border-right: 1px solid #E0E0E0;
+  display: flex; flex-direction: column; overflow: hidden;
+  transition: transform .25s ease;
+}
+
+.daily-input-area { padding: 14px 16px; border-bottom: 1px solid #F0F0F0; flex-shrink: 0; }
+.daily-input-area .input-textarea { resize: none; }
+
+.daily-btn-row { display: flex; gap: 8px; margin-top: 10px; }
+.btn-daily-random { background: #5C6BC0; color: #fff; padding: 10px 16px; border: none; border-radius: 8px; font-size: 14px; font-family: inherit; cursor: pointer; transition: filter .15s, transform .1s; white-space: nowrap; flex: 1; }
+.btn-daily-random:hover { filter: brightness(.92); }
+.btn-daily-random:active { transform: scale(.97); }
+.btn-daily-random:disabled { opacity: .55; cursor: not-allowed; }
+
+.daily-list-header { padding: 10px 16px; font-size: 12px; font-weight: 700; text-transform: uppercase; letter-spacing: .6px; color: #9E9E9E; border-bottom: 1px solid #F0F0F0; flex-shrink: 0; }
+
+.daily-list { flex: 1; overflow-y: auto; }
+
+.daily-line-item { padding: 12px 16px; border-bottom: 1px solid #F5F5F5; cursor: pointer; transition: background .12s; }
+.daily-line-item:hover { background: #F5F5F5; }
+.daily-line-item.selected { box-shadow: inset 3px 0 0 #5C6BC0; background: #F3F4FF; }
+
+.daily-line-top { display: flex; align-items: flex-start; gap: 8px; margin-bottom: 4px; }
+.daily-speaker-badge { flex-shrink: 0; width: 22px; height: 22px; border-radius: 50%; font-size: 12px; font-weight: 700; display: flex; align-items: center; justify-content: center; margin-top: 1px; }
+.daily-speaker-a { background: #E3F2FD; color: #1565C0; }
+.daily-speaker-b { background: #F3E5F5; color: #6A1B9A; }
+.daily-line-en { font-size: 13px; color: #333; line-height: 1.5; flex: 1; }
+.daily-line-zh { font-size: 12px; color: #9E9E9E; padding-left: 30px; line-height: 1.4; }
+
+.daily-detail-wrap { flex: 1; overflow: hidden; display: flex; flex-direction: column; }
+.daily-detail { flex: 1; overflow-y: auto; padding: 28px; background: #F0F2F5; height: 100%; }
+
 /* ── Toast ── */
 .toast { background: #323232; color: #fff; padding: 10px 22px; border-radius: 8px; font-size: 14px; box-shadow: 0 4px 12px rgba(0,0,0,.3); white-space: nowrap; }
 
@@ -222,4 +259,32 @@ body {
 
   /* Detail sections */
   .detail-section { padding: 14px 16px; }
+
+  /* Daily：单面板模式 */
+  .daily-wrap { position: relative; overflow: hidden; }
+
+  .daily-left {
+    width: 100%;
+    position: absolute; inset: 0;
+    transform: translateX(0);
+    z-index: 1;
+  }
+  .daily-left--hidden {
+    transform: translateX(-100%);
+    pointer-events: none;
+  }
+
+  .daily-detail-wrap {
+    width: 100%;
+    position: absolute; inset: 0;
+    transform: translateX(100%);
+    transition: transform .25s ease;
+    z-index: 2;
+    background: #F0F2F5;
+  }
+  .daily-detail-wrap--visible {
+    transform: translateX(0);
+  }
+
+  .daily-detail { padding: 16px 12px 32px; }
 }

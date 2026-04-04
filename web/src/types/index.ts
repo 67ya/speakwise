@@ -32,3 +32,11 @@ export interface PendingEntry extends AnalyzeResult {
   includeSpoken: boolean;
   practiceType: PracticeType;
 }
+
+export interface DailyLine {
+  id: string;
+  chinese: string;
+  spoken: string;
+  vocabulary: string;
+  speaker?: string;  // 'A' | 'B' for conversations, undefined for single input
+}
