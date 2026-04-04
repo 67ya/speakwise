@@ -5,9 +5,35 @@ on:
     branches: [main]
 
 jobs:
-  deploy:
+  build:
     runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
 
+      - name: Log in to GHCR
+        uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Build & Push frontend
+        uses: docker/build-push-action@v5
+        with:
+          context: ./web
+          push: true
+          tags: ghcr.io/67ya/speakwise-frontend:${{ github.sha }}
+
+      - name: Build & Push api
+        uses: docker/build-push-action@v5
+        with:
+          context: ./eng-learn
+          push: true
+          tags: ghcr.io/67ya/speakwise-api:${{ github.sha }}
+
+  deploy:
+    needs: build
+    runs-on: ubuntu-latest
     steps:
       - name: Deploy via SSH
         uses: appleboy/ssh-action@v1
@@ -15,9 +41,16 @@ jobs:
           host: ${{ secrets.EC2_HOST }}
           username: ${{ secrets.EC2_USER }}
           key: ${{ secrets.EC2_SSH_KEY }}
-          command_timeout: 30m
+          command_timeout: 10m
           script: |
             cd /home/ec2-user/english_learn
-            git pull origin main
-            docker-compose up -d --build
+
+            # 更新镜像版本号
+            sed -i "s/^IMAGE_TAG=.*/IMAGE_TAG=${{ github.sha }}/" .env || echo "IMAGE_TAG=${{ github.sha }}" >> .env
+
+            # 登录 GHCR 拉取镜像
+            echo "${{ secrets.GHCR_TOKEN }}" | docker login ghcr.io -u 67ya --password-stdin
+
+            docker-compose pull frontend api
+            docker-compose up -d frontend api
             docker image prune -f
