@@ -2,7 +2,7 @@ version: '3.8'
 
 services:
   frontend:
-    image: ghcr.io/67ya/speakwise-frontend:${IMAGE_TAG:-latest}
+    image: ghcr.io/67ya/speakwise-frontend:latest
     build:
       context: ./web
       dockerfile: Dockerfile
@@ -12,7 +12,7 @@ services:
       - api
 
   api:
-    image: ghcr.io/67ya/speakwise-api:${IMAGE_TAG:-latest}
+    image: ghcr.io/67ya/speakwise-api:latest
     build:
       context: ./eng-learn
       dockerfile: Dockerfile
