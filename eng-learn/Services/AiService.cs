@@ -213,11 +213,11 @@ Chinese sentence: "{chinese}"
 
     private async Task<CodeResult> CallCodeAsync(string code)
     {
-        var prompt = $"""
+        var prompt = $$""""
 You are a code analysis assistant. Analyze the following code.
 
 1. Summarize what this code does in exactly 10 Chinese characters (no more, no less)
-2. Return the original code with concise inline comments added in Chinese
+2. Copy every single line of the original code exactly as-is, and add a short Chinese comment (用中文注释) at the end of each meaningful line (use // or # depending on the language). Do NOT omit any lines. The output must be the complete original code with Chinese comments added inline. All comments MUST be in Chinese (中文).
 
 Respond ONLY in this exact format:
 
@@ -225,13 +225,13 @@ Respond ONLY in this exact format:
 <10-char Chinese summary>
 
 [ANALYSIS]
-<original code with Chinese inline comments>
+<complete original code, every line preserved, with Chinese inline comments appended>
 
 Code:
 """
-{code}
+{{code}}
 """
-""";
+"""";
 
         var text = await CallAiRawAsync(prompt);
         return ParseCodeResponse(text);

@@ -3,12 +3,13 @@ import PracticeView from './components/PracticeView';
 import NotebookView from './components/NotebookView';
 import DailyView from './components/DailyView';
 import CodeView from './components/CodeView';
+import CardView from './components/CardView';
 import Toast from './components/Toast';
 import { useToast } from './hooks/useToast';
 import { getCategories, createCategory } from './api/categories';
 import type { Category } from './types';
 
-type View = 'practice' | 'notebook' | 'daily' | 'code';
+type View = 'practice' | 'notebook' | 'daily' | 'code' | 'card';
 
 const DAILY_CATEGORY_NAME = '中英天天练';
 const CODE_CATEGORY_NAME  = '代码解析';
@@ -68,6 +69,10 @@ export default function App() {
             className={`nav-tab${view === 'code' ? ' active' : ''}`}
             onClick={() => setView('code')}
           >代码解析</button>
+          <button
+            className={`nav-tab${view === 'card' ? ' active' : ''}`}
+            onClick={() => setView('card')}
+          >卡牌</button>
         </div>
       </nav>
 
@@ -97,6 +102,13 @@ export default function App() {
           categories={categories}
           defaultCategoryId={codeCategoryId}
           onSaved={handleSaved}
+          showToast={showToast}
+        />
+      )}
+
+      {view === 'card' && (
+        <CardView
+          categories={categories}
           showToast={showToast}
         />
       )}

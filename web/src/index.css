@@ -312,3 +312,67 @@ body {
   font-size: 13px;
   line-height: 1.6;
 }
+
+/* ── Card (flashcard) view ──────────────────────────────── */
+.card-toolbar {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 16px;
+  border-bottom: 1px solid #E8EAF6;
+  flex-wrap: wrap;
+}
+.card-passed-count {
+  font-size: 13px;
+  color: #888;
+  margin-left: auto;
+}
+.card-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 16px;
+  padding: 16px;
+}
+@media (max-width: 640px) {
+  .card-grid { grid-template-columns: 1fr; }
+}
+.flash-card {
+  background: #fff;
+  border-radius: 12px;
+  box-shadow: 0 2px 12px rgba(0,0,0,.08);
+  padding: 16px;
+  cursor: pointer;
+  transition: box-shadow .2s, transform .1s;
+  border: 1px solid #e0e0e0;
+}
+.flash-card:hover:not(.flash-card--flipped) {
+  box-shadow: 0 4px 20px rgba(57,73,171,.15);
+  transform: translateY(-2px);
+}
+.flash-card--flipped {
+  cursor: default;
+}
+.card-index {
+  font-size: 11px;
+  color: #bbb;
+  margin-bottom: 6px;
+  font-weight: 600;
+  letter-spacing: .5px;
+}
+.card-front {
+  font-size: 16px;
+  font-weight: 600;
+  line-height: 1.5;
+  color: inherit;
+}
+.card-hint {
+  font-size: 12px;
+  color: #aaa;
+  margin-top: 10px;
+  text-align: right;
+}
+.card-back {
+  margin-top: 12px;
+  border-top: 1px solid rgba(0,0,0,.1);
+  padding-top: 12px;
+}

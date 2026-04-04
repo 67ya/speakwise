@@ -37,7 +37,8 @@ export default function NotebookView({ refreshSignal, showToast }: Props) {
     setCategories(c);
   }, []);
 
-  useEffect(() => { load(); setExpandedCats(new Set()); }, [refreshSignal, load]);
+  const isFirstLoad = refreshSignal === 0;
+  useEffect(() => { load(); if (isFirstLoad) setExpandedCats(new Set()); }, [refreshSignal, load, isFirstLoad]);
 
   const selected = entries.find(e => e.id === selectedId) ?? null;
 

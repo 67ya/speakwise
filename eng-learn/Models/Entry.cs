@@ -7,13 +7,13 @@ public class Entry
 {
     public long Id { get; set; }
 
-    [MaxLength(500)]
+    [Column(TypeName = "text")]
     public string? Question { get; set; }
 
     [Required, MaxLength(2000)]
     public string Original { get; set; } = string.Empty;
 
-    [MaxLength(2000)]
+    [Column(TypeName = "text")]
     public string Spoken { get; set; } = string.Empty;
 
     [MaxLength(2000)]
