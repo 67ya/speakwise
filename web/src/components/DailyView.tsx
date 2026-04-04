@@ -5,11 +5,12 @@ import type { Category, DailyLine } from '../types';
 
 interface Props {
   categories: Category[];
+  defaultCategoryId: number | null;
   onSaved: () => void;
   showToast: (msg: string) => void;
 }
 
-export default function DailyView({ categories, onSaved, showToast }: Props) {
+export default function DailyView({ categories, defaultCategoryId, onSaved, showToast }: Props) {
   const [chinese, setChinese]         = useState('');
   const [lines, setLines]             = useState<DailyLine[]>([]);
   const [selectedId, setSelectedId]   = useState<string | null>(null);
@@ -33,7 +34,7 @@ export default function DailyView({ categories, onSaved, showToast }: Props) {
       };
       setLines([line]);
       setSelectedId(line.id);
-      setCategoryId('');
+      setCategoryId(defaultCategoryId ? String(defaultCategoryId) : '');
       if (r.fromCache) showToast('⚡ 已从缓存加载');
     } catch (e: any) {
       showToast('分析失败：' + (e.response?.data?.error ?? e.message));
@@ -45,7 +46,8 @@ export default function DailyView({ categories, onSaved, showToast }: Props) {
   const handleRandom = async () => {
     setRandomLoading(true);
     try {
-      const r = await randomConversation();
+      const topic = chinese.trim() || undefined;
+      const r = await randomConversation(topic);
       const newLines: DailyLine[] = r.lines.map((l, i) => ({
         id: `${Date.now()}-${i}`,
         chinese: l.chinese,
@@ -55,7 +57,7 @@ export default function DailyView({ categories, onSaved, showToast }: Props) {
       }));
       setLines(newLines);
       setSelectedId(newLines[0]?.id ?? null);
-      setCategoryId('');
+      setCategoryId(defaultCategoryId ? String(defaultCategoryId) : '');
     } catch (e: any) {
       showToast('生成失败：' + (e.response?.data?.error ?? e.message));
     } finally {
@@ -98,13 +100,13 @@ export default function DailyView({ categories, onSaved, showToast }: Props) {
           <button className="btn-back" onClick={() => setMobileDetail(false)}>← 返回列表</button>
 
           <div className="detail-section">
-            <div className="section-label">英文口语</div>
-            <p>{selected.spoken}</p>
+            <div className="section-label">中文原句</div>
+            <p style={{ color: '#555' }}>{selected.chinese}</p>
           </div>
 
           <div className="detail-section">
-            <div className="section-label">中文原句</div>
-            <p style={{ color: '#555' }}>{selected.chinese}</p>
+            <div className="section-label">口语翻译</div>
+            <p>{selected.spoken}</p>
           </div>
 
           <div className="detail-section">
@@ -190,9 +192,8 @@ export default function DailyView({ categories, onSaved, showToast }: Props) {
                 {!line.speaker && (
                   <span className="entry-index">{i + 1}</span>
                 )}
-                <span className="daily-line-en">{line.spoken}</span>
+                <span className="daily-line-en">{line.chinese}</span>
               </div>
-              <div className="daily-line-zh">{line.chinese}</div>
             </div>
           ))}
         </div>

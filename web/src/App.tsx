@@ -4,20 +4,31 @@ import NotebookView from './components/NotebookView';
 import DailyView from './components/DailyView';
 import Toast from './components/Toast';
 import { useToast } from './hooks/useToast';
-import { getCategories } from './api/categories';
+import { getCategories, createCategory } from './api/categories';
 import type { Category } from './types';
 
 type View = 'practice' | 'notebook' | 'daily';
 
+const DAILY_CATEGORY_NAME = '中英天天练';
+
 export default function App() {
   const [view, setView]             = useState<View>('practice');
   const [categories, setCategories] = useState<Category[]>([]);
+  const [dailyCategoryId, setDailyCategoryId] = useState<number | null>(null);
   const [refreshSignal, setRefreshSignal] = useState(0);
   const { toasts, showToast }       = useToast();
 
   const loadCategories = useCallback(async () => {
     const cats = await getCategories();
     setCategories(cats);
+    const existing = cats.find(c => c.name === DAILY_CATEGORY_NAME);
+    if (existing) {
+      setDailyCategoryId(existing.id);
+    } else {
+      const created = await createCategory(DAILY_CATEGORY_NAME);
+      setDailyCategoryId(created.id);
+      setCategories([...cats, created]);
+    }
   }, []);
 
   useEffect(() => { loadCategories(); }, [loadCategories]);
@@ -42,7 +53,7 @@ export default function App() {
           <button
             className={`nav-tab${view === 'daily' ? ' active' : ''}`}
             onClick={() => setView('daily')}
-          >英语天天练</button>
+          >中英天天练</button>
         </div>
       </nav>
 
@@ -62,6 +73,7 @@ export default function App() {
       {view === 'daily' && (
         <DailyView
           categories={categories}
+          defaultCategoryId={dailyCategoryId}
           onSaved={handleSaved}
           showToast={showToast}
         />
