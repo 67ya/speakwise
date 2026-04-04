@@ -192,6 +192,70 @@ Chinese sentence: "{chinese}"
         };
     }
 
+    // ── Code Analysis ──────────────────────────────────────────────────────
+
+    public async Task<CodeResult> CodeAsync(string code)
+    {
+        var cacheKey = $"code:{ComputeHash(code)}";
+        var cached = await cache.GetStringAsync(cacheKey);
+        if (cached != null)
+        {
+            var r = JsonSerializer.Deserialize<CodeResult>(cached, JsonOpts)!;
+            r.FromCache = true;
+            return r;
+        }
+
+        var result = await CallCodeAsync(code);
+        await cache.SetStringAsync(cacheKey, JsonSerializer.Serialize(result, JsonOpts),
+            new DistributedCacheEntryOptions { AbsoluteExpirationRelativeToNow = TimeSpan.FromDays(7) });
+        return result;
+    }
+
+    private async Task<CodeResult> CallCodeAsync(string code)
+    {
+        var prompt = $"""
+You are a code analysis assistant. Analyze the following code.
+
+1. Summarize what this code does in exactly 10 Chinese characters (no more, no less)
+2. Return the original code with concise inline comments added in Chinese
+
+Respond ONLY in this exact format:
+
+[SUMMARY]
+<10-char Chinese summary>
+
+[ANALYSIS]
+<original code with Chinese inline comments>
+
+Code:
+"""
+{code}
+"""
+""";
+
+        var text = await CallAiRawAsync(prompt);
+        return ParseCodeResponse(text);
+    }
+
+    private static CodeResult ParseCodeResponse(string text)
+    {
+        static string GetSection(string content, string tag)
+        {
+            var pattern = $"[{tag}]";
+            var start = content.IndexOf(pattern, StringComparison.OrdinalIgnoreCase);
+            if (start < 0) return string.Empty;
+            start += pattern.Length;
+            var end = content.IndexOf('[', start);
+            return (end < 0 ? content[start..] : content[start..end]).Trim();
+        }
+
+        return new CodeResult
+        {
+            Summary  = GetSection(text, "SUMMARY"),
+            Analysis = GetSection(text, "ANALYSIS"),
+        };
+    }
+
     // ── Random Conversation ─────────────────────────────────────────────────
 
     public async Task<ConversationResult> RandomConversationAsync(string? topic)

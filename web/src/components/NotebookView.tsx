@@ -5,6 +5,7 @@ import CategoryModal from './CategoryModal';
 import type { Entry, Category } from '../types';
 
 const DAILY_CAT = '中英天天练';
+const CODE_CAT  = '代码解析';
 
 const PRIORITY_COLORS = [
   { label: 'P1 最低', value: '#E0E0E0', text: '#555' },
@@ -103,8 +104,9 @@ export default function NotebookView({ refreshSignal, showToast }: Props) {
 
   const renderEntryItem = (entry: Entry, i: number, catName?: string) => {
     const isDaily = catName === DAILY_CAT;
-    const preview = isDaily
-      ? entry.original.slice(0, 15) + (entry.original.length > 15 ? '…' : '')
+    const isCode  = catName === CODE_CAT;
+    const preview = (isDaily || isCode)
+      ? entry.original.slice(0, 20) + (entry.original.length > 20 ? '…' : '')
       : (entry.original.split(' ').length > 5
           ? entry.original.split(' ').slice(0, 5).join(' ') + '…'
           : entry.original);
@@ -127,6 +129,7 @@ export default function NotebookView({ refreshSignal, showToast }: Props) {
 
   const selectedCatName = categories.find(c => c.id === selected?.categoryId)?.name;
   const isDailyEntry = selectedCatName === DAILY_CAT;
+  const isCodeEntry  = selectedCatName === CODE_CAT;
 
   const detailPanel = (
     <div className="nb-detail">
@@ -137,7 +140,22 @@ export default function NotebookView({ refreshSignal, showToast }: Props) {
           {/* 手机端返回按钮 */}
           <button className="btn-back" onClick={backToList}>← 返回列表</button>
 
-          {isDailyEntry ? (
+          {isCodeEntry ? (
+            <>
+              <div className="detail-section">
+                <div className="section-label">代码总结</div>
+                <p style={{ fontWeight: 600 }}>{selected.original}</p>
+              </div>
+              <div className="detail-section">
+                <div className="section-label">源代码</div>
+                <pre className="code-block"><code>{selected.question}</code></pre>
+              </div>
+              <div className="detail-section">
+                <div className="section-label">代码解析</div>
+                <pre className="code-block"><code>{selected.spoken}</code></pre>
+              </div>
+            </>
+          ) : isDailyEntry ? (
             <>
               <div className="detail-section">
                 <div className="section-label">中文原句</div>

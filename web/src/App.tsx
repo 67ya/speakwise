@@ -2,33 +2,43 @@ import { useState, useEffect, useCallback } from 'react';
 import PracticeView from './components/PracticeView';
 import NotebookView from './components/NotebookView';
 import DailyView from './components/DailyView';
+import CodeView from './components/CodeView';
 import Toast from './components/Toast';
 import { useToast } from './hooks/useToast';
 import { getCategories, createCategory } from './api/categories';
 import type { Category } from './types';
 
-type View = 'practice' | 'notebook' | 'daily';
+type View = 'practice' | 'notebook' | 'daily' | 'code';
 
 const DAILY_CATEGORY_NAME = '中英天天练';
+const CODE_CATEGORY_NAME  = '代码解析';
+
+async function ensureCategory(cats: Category[], name: string): Promise<{ id: number; cats: Category[] }> {
+  const existing = cats.find(c => c.name === name);
+  if (existing) return { id: existing.id, cats };
+  const created = await createCategory(name);
+  return { id: created.id, cats: [...cats, created] };
+}
 
 export default function App() {
   const [view, setView]             = useState<View>('practice');
   const [categories, setCategories] = useState<Category[]>([]);
   const [dailyCategoryId, setDailyCategoryId] = useState<number | null>(null);
+  const [codeCategoryId, setCodeCategoryId]   = useState<number | null>(null);
   const [refreshSignal, setRefreshSignal] = useState(0);
   const { toasts, showToast }       = useToast();
 
   const loadCategories = useCallback(async () => {
-    const cats = await getCategories();
+    let cats = await getCategories();
+    const dailyResult = await ensureCategory(cats, DAILY_CATEGORY_NAME);
+    cats = dailyResult.cats;
+    setDailyCategoryId(dailyResult.id);
+
+    const codeResult = await ensureCategory(cats, CODE_CATEGORY_NAME);
+    cats = codeResult.cats;
+    setCodeCategoryId(codeResult.id);
+
     setCategories(cats);
-    const existing = cats.find(c => c.name === DAILY_CATEGORY_NAME);
-    if (existing) {
-      setDailyCategoryId(existing.id);
-    } else {
-      const created = await createCategory(DAILY_CATEGORY_NAME);
-      setDailyCategoryId(created.id);
-      setCategories([...cats, created]);
-    }
   }, []);
 
   useEffect(() => { loadCategories(); }, [loadCategories]);
@@ -54,6 +64,10 @@ export default function App() {
             className={`nav-tab${view === 'daily' ? ' active' : ''}`}
             onClick={() => setView('daily')}
           >中英天天练</button>
+          <button
+            className={`nav-tab${view === 'code' ? ' active' : ''}`}
+            onClick={() => setView('code')}
+          >代码解析</button>
         </div>
       </nav>
 
@@ -74,6 +88,14 @@ export default function App() {
         <DailyView
           categories={categories}
           defaultCategoryId={dailyCategoryId}
+          onSaved={handleSaved}
+          showToast={showToast}
+        />
+      )}
+      {view === 'code' && (
+        <CodeView
+          categories={categories}
+          defaultCategoryId={codeCategoryId}
           onSaved={handleSaved}
           showToast={showToast}
         />

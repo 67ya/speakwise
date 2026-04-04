@@ -24,3 +24,6 @@ logs/
 # 打包文件
 *.tar.gz
 *.zip
+
+# 本地脚本
+push.bat
