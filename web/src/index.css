@@ -221,9 +221,11 @@ body {
    ══════════════════════════════════════ */
 @media (max-width: 639px) {
   /* Nav */
-  .nav { padding: 0 14px; gap: 12px; }
-  .nav-brand { font-size: 15px; }
-  .nav-tab { padding: 6px 12px; font-size: 13px; }
+  .nav { padding: 0 10px; gap: 8px; overflow-x: auto; height: auto; min-height: 54px; flex-wrap: nowrap; }
+  .nav::-webkit-scrollbar { display: none; }
+  .nav-brand { font-size: 14px; flex-shrink: 0; }
+  .nav-tabs { flex-shrink: 0; gap: 2px; }
+  .nav-tab { padding: 5px 10px; font-size: 12px; white-space: nowrap; flex-shrink: 0; }
 
   /* Practice */
   .practice-wrap { padding: 16px 12px 40px; }
