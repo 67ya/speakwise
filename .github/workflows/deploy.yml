@@ -52,6 +52,7 @@ jobs:
           command_timeout: 10m
           script: |
             cd /home/ec2-user/english_learn
+            git pull origin main
             echo "${{ secrets.GHCR_TOKEN }}" | docker login ghcr.io -u 67ya --password-stdin
             docker-compose pull frontend api
             docker-compose up -d --no-build frontend api
