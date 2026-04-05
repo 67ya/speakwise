@@ -265,24 +265,24 @@ Code:
             : topic;
 
         var prompt = $"""
-Generate a short English conversation based on the following scenario: {topicStr}
+Generate a natural English conversation based on the following scenario: {topicStr}
 
 Rules:
-- 4–6 exchanges total
-- If the scenario specifies roles or personas (e.g. interviewer and candidate, doctor and patient, teacher and student), use those role names as the speaker labels and make the dialogue true to that scenario
+- 6–12 exchanges total (alternate between speaker A and speaker B)
+- Always label speakers as A and B regardless of their roles in the scenario
 - Match the language register to the scenario: formal/professional for interviews or workplace settings, casual for everyday topics
 - For each line provide the Chinese translation and 2–3 key vocabulary items from that line
 
 Respond ONLY in this exact format (repeat [LINE] blocks, no other text):
 
 [LINE]
-SPEAKER: <role name or A>
+SPEAKER: A
 EN: <English sentence>
 ZH: <Chinese translation>
 VOCAB: <word/phrase - Chinese> | <word/phrase - Chinese>
 
 [LINE]
-SPEAKER: <role name or B>
+SPEAKER: B
 EN: <English sentence>
 ZH: <Chinese translation>
 VOCAB: <word/phrase - Chinese> | <word/phrase - Chinese>
