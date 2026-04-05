@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef } from 'react';
-import { getEntries } from '../api/entries';
+import { getEntries, updateColor } from '../api/entries';
 import { scoreExam, getExamHistory, saveExamHistory } from '../api/exam';
 import type { Entry } from '../types';
 import type { ExamAnswer, AnswerFeedback, ExamHistoryRecord } from '../api/exam';
@@ -35,6 +35,19 @@ interface HistoryItem {
 
 const TOTAL_CARDS = 10;
 const BLANK_SEP   = '|||';
+
+// 由深到浅：P7→P6→P5→P4→P3→P2→P1→null
+// 分数越低颜色越深（需要重点复习），95+ 不标色
+function scoreToColor(score: number): string | null {
+  if (score <  65) return '#9FA8DA'; // P7
+  if (score <  70) return '#F8BBD9'; // P6
+  if (score <  75) return '#FFE0B2'; // P5
+  if (score <  80) return '#B3E5FC'; // P4
+  if (score <  85) return '#C8E6C9'; // P3
+  if (score <  90) return '#FFF59D'; // P2
+  if (score <  95) return '#E0E0E0'; // P1
+  return null;                        // 95+ 不标色
+}
 
 function shuffle<T>(arr: T[]): T[] {
   const a = [...arr];
@@ -258,6 +271,15 @@ export default function TestView({ dailyCategoryId, codeCategoryId, showToast }:
 
       setResultItems(items);
       setTotalScore(result.totalScore);
+
+      // 根据得分更新笔记本卡片颜色
+      await Promise.allSettled(
+        examCards.map(c => {
+          const fb    = fbMap.get(c.entry.id);
+          const color = scoreToColor(fb?.score ?? 0);
+          return updateColor(c.entry.id, color);
+        })
+      );
 
       const elapsed = Math.round((Date.now() - startTimeRef.current) / 1000);
       await saveExamHistory({
