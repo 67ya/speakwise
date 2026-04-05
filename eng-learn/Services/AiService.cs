@@ -352,7 +352,8 @@ VOCAB: <word/phrase - Chinese> | <word/phrase - Chinese>
         sb.AppendLine();
         sb.AppendLine("Scoring rules:");
         sb.AppendLine("For English/Daily type (max 100 per card):");
-        sb.AppendLine("  - Spelling mistake or grammar error: -5 each");
+        sb.AppendLine("  - Ignore: capitalization errors, extra/missing spaces, punctuation differences — these do NOT deduct any points");
+        sb.AppendLine("  - Spelling mistake (wrong letters in a word) or clear grammar error: -5 each");
         sb.AppendLine("  - Overall meaning has deviation: -20");
         sb.AppendLine("  - Meaning completely wrong or blank: -50");
         sb.AppendLine("For Code type (max 100 per card, 5 blanks × 20 pts each):");

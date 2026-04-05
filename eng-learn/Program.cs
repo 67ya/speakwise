@@ -41,11 +41,23 @@ builder.Services.AddSwaggerGen();
 
 var app = builder.Build();
 
-// 自动建表
+// 自动建表（EnsureCreated 对已存在的库不会补建新表，所以用 IF NOT EXISTS 手动补）
 using (var scope = app.Services.CreateScope())
 {
     var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
     db.Database.EnsureCreated();
+    db.Database.ExecuteSqlRaw("""
+        CREATE TABLE IF NOT EXISTS `ExamRecords` (
+            `Id`          INT          NOT NULL AUTO_INCREMENT,
+            `Date`        VARCHAR(60)  NOT NULL,
+            `TotalScore`  INT          NOT NULL,
+            `CardCount`   INT          NOT NULL,
+            `DurationSec` INT          NOT NULL,
+            `ItemsJson`   LONGTEXT     NOT NULL,
+            `CreatedAt`   DATETIME(6)  NOT NULL DEFAULT CURRENT_TIMESTAMP(6),
+            PRIMARY KEY (`Id`)
+        ) CHARACTER SET utf8mb4;
+        """);
 }
 
 if (app.Environment.IsDevelopment())

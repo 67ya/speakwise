@@ -1,8 +1,8 @@
 import { useState, useEffect, useRef } from 'react';
 import { getEntries } from '../api/entries';
-import { scoreExam } from '../api/exam';
+import { scoreExam, getExamHistory, saveExamHistory } from '../api/exam';
 import type { Entry } from '../types';
-import type { ExamAnswer, AnswerFeedback } from '../api/exam';
+import type { ExamAnswer, AnswerFeedback, ExamHistoryRecord } from '../api/exam';
 
 interface Props {
   dailyCategoryId: number | null;
@@ -22,38 +22,19 @@ interface ExamCard {
 // Stored per-item in history
 interface HistoryItem {
   cardType:   CardType;
-  prompt:     string;   // what was displayed to user
-  userInput:  string;   // what user typed (for english/daily)
-  expected:   string;   // correct answer
+  prompt:     string;
+  userInput:  string;
+  expected:   string;
   score:      number;
   deduction:  number;
   comment:    string;
-  // code-specific
   spoken?:    string;
   blanks?:    { lineIndex: number; comment: string }[];
   codeInputs?: string[];
 }
 
-interface ExamRecord {
-  date:        string;
-  totalScore:  number;
-  cardCount:   number;
-  durationSec: number;
-  items:       HistoryItem[];
-}
-
-const HISTORY_KEY    = 'exam_history';
-const TOTAL_CARDS    = 40;
-const BLANK_SEP      = '|||';
-const MAX_HISTORY    = 20;
-
-function loadHistory(): ExamRecord[] {
-  try { return JSON.parse(localStorage.getItem(HISTORY_KEY) || '[]') as ExamRecord[]; }
-  catch { return []; }
-}
-function saveHistory(h: ExamRecord[]) {
-  localStorage.setItem(HISTORY_KEY, JSON.stringify(h.slice(-MAX_HISTORY)));
-}
+const TOTAL_CARDS = 40;
+const BLANK_SEP   = '|||';
 
 function shuffle<T>(arr: T[]): T[] {
   const a = [...arr];
@@ -153,10 +134,11 @@ export default function TestView({ dailyCategoryId, codeCategoryId, showToast }:
   const [answers, setAnswers]       = useState<Map<number, string>>(new Map());
   const [codeInputs, setCodeInputs] = useState<Map<number, string[]>>(new Map());
   const [timeLeft, setTimeLeft]     = useState(0);
-  const [resultItems, setResultItems] = useState<HistoryItem[]>([]);
-  const [totalScore, setTotalScore] = useState(0);
-  const [history, setHistory]       = useState<ExamRecord[]>(loadHistory);
-  const [reviewIdx, setReviewIdx]   = useState<number | null>(null);
+  const [resultItems, setResultItems]   = useState<HistoryItem[]>([]);
+  const [totalScore, setTotalScore]     = useState(0);
+  const [history, setHistory]           = useState<ExamHistoryRecord[]>([]);
+  const [historyLoading, setHistoryLoading] = useState(false);
+  const [reviewRecord, setReviewRecord] = useState<ExamHistoryRecord | null>(null);
   const [isGrading, setIsGrading]   = useState(false);
 
   const startTimeRef  = useRef<number>(0);
@@ -166,6 +148,11 @@ export default function TestView({ dailyCategoryId, codeCategoryId, showToast }:
   const cardsRef      = useRef<ExamCard[]>([]);
 
   useEffect(() => () => { if (timerRef.current) clearInterval(timerRef.current); }, []);
+
+  useEffect(() => {
+    setHistoryLoading(true);
+    getExamHistory().then(setHistory).catch(() => {}).finally(() => setHistoryLoading(false));
+  }, []);
 
   const handleStart = async () => {
     const all    = await getEntries();
@@ -273,16 +260,15 @@ export default function TestView({ dailyCategoryId, codeCategoryId, showToast }:
       setTotalScore(result.totalScore);
 
       const elapsed = Math.round((Date.now() - startTimeRef.current) / 1000);
-      const record: ExamRecord = {
+      await saveExamHistory({
         date:        new Date().toLocaleString('zh-CN'),
         totalScore:  result.totalScore,
         cardCount:   examCards.length,
         durationSec: elapsed,
-        items,
-      };
-      const newHistory = [...history, record];
-      setHistory(newHistory);
-      saveHistory(newHistory);
+        itemsJson:   JSON.stringify(items),
+      });
+      // 重新拉取历史列表
+      getExamHistory().then(setHistory).catch(() => {});
       setPhase('result');
     } catch (e: any) {
       showToast('评分失败：' + (e.response?.data?.error ?? e.message));
@@ -318,16 +304,17 @@ export default function TestView({ dailyCategoryId, codeCategoryId, showToast }:
   };
 
   // ── Review phase ─────────────────────────────────────────────────────────
-  if (phase === 'review' && reviewIdx !== null) {
-    const rec = history[reviewIdx];
+  if (phase === 'review' && reviewRecord !== null) {
+    let items: HistoryItem[] = [];
+    try { items = JSON.parse(reviewRecord.itemsJson) as HistoryItem[]; } catch { items = []; }
     return (
       <div className="test-wrap test-result-wrap">
         <div className="test-result-header">
-          <div className="test-result-score">{rec.totalScore} 分</div>
-          <div className="test-result-sub">{rec.date} · {rec.cardCount} 题 · {Math.round(rec.durationSec / 60)} 分钟</div>
-          <button className="btn btn-secondary" onClick={() => { setReviewIdx(null); setPhase('setup'); }}>← 返回</button>
+          <div className="test-result-score">{reviewRecord.totalScore} 分</div>
+          <div className="test-result-sub">{reviewRecord.date} · {reviewRecord.cardCount} 题 · {Math.round(reviewRecord.durationSec / 60)} 分钟</div>
+          <button className="btn btn-secondary" onClick={() => { setReviewRecord(null); setPhase('setup'); }}>← 返回</button>
         </div>
-        <ResultList items={rec.items} />
+        <ResultList items={items} />
       </div>
     );
   }
@@ -348,23 +335,20 @@ export default function TestView({ dailyCategoryId, codeCategoryId, showToast }:
           <p className="test-desc">随机抽取 {TOTAL_CARDS} 道题，包含英语练习、中英天天练和代码解析三类。</p>
           <button className="btn btn-primary test-start-btn" onClick={handleStart}>开始考试</button>
 
-          {history.length > 0 && (
+          {(historyLoading || history.length > 0) && (
             <div className="test-history">
               <div className="test-history-title">历史记录</div>
-              {history.slice().reverse().map((h, ri) => {
-                const realIdx = history.length - 1 - ri;
-                return (
-                  <div key={ri} className="test-history-item">
-                    <span className="test-history-date">{h.date}</span>
-                    <span className="test-history-score">{h.totalScore} 分</span>
-                    <span className="test-history-meta">{h.cardCount} 题 · {Math.round(h.durationSec / 60)} 分钟</span>
-                    <button
-                      className="btn-review"
-                      onClick={() => { setReviewIdx(realIdx); setPhase('review'); }}
-                    >查看试卷</button>
-                  </div>
-                );
-              })}
+              {historyLoading && <div className="empty-tip" style={{ margin: '12px 0' }}>加载中…</div>}
+              {history.map(h => (
+                <div key={h.id} className="test-history-item">
+                  <span className="test-history-date">{h.date}</span>
+                  <span className="test-history-score">{h.totalScore} 分</span>
+                  <span className="test-history-meta">{h.cardCount} 题 · {Math.round(h.durationSec / 60)} 分钟</span>
+                  <button className="btn-review" onClick={() => { setReviewRecord(h); setPhase('review'); }}>
+                    查看试卷
+                  </button>
+                </div>
+              ))}
             </div>
           )}
         </div>

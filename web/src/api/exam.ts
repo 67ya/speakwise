@@ -1,5 +1,21 @@
 import client from './client';
 
+export interface ExamHistoryRecord {
+  id:          number;
+  date:        string;
+  totalScore:  number;
+  cardCount:   number;
+  durationSec: number;
+  itemsJson:   string;
+}
+
+export const getExamHistory = () =>
+  client.get<ExamHistoryRecord[]>('/api/exam/history').then(r => r.data);
+
+export const saveExamHistory = (payload: {
+  date: string; totalScore: number; cardCount: number; durationSec: number; itemsJson: string;
+}) => client.post('/api/exam/history', payload);
+
 export interface ExamAnswer {
   entryId:    number;
   type:       'english' | 'daily' | 'code';

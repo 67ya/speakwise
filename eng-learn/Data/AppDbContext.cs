@@ -7,6 +7,7 @@ public class AppDbContext(DbContextOptions<AppDbContext> options) : DbContext(op
 {
     public DbSet<Entry> Entries => Set<Entry>();
     public DbSet<Category> Categories => Set<Category>();
+    public DbSet<ExamRecord> ExamRecords => Set<ExamRecord>();
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
