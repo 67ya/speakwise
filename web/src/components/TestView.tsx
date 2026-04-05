@@ -33,7 +33,7 @@ interface HistoryItem {
   codeInputs?: string[];
 }
 
-const TOTAL_CARDS = 40;
+const TOTAL_CARDS = 10;
 const BLANK_SEP   = '|||';
 
 function shuffle<T>(arr: T[]): T[] {
