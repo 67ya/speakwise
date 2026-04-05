@@ -217,7 +217,7 @@ Chinese sentence: "{chinese}"
 You are a code analysis assistant. Analyze the following code.
 
 1. Summarize what this code does in exactly 10 Chinese characters (no more, no less)
-2. Copy every single line of the original code exactly as-is, and add a short Chinese comment (用中文注释) at the end of each meaningful line (use // or # depending on the language). Do NOT omit any lines. The output must be the complete original code with Chinese comments added inline. All comments MUST be in Chinese (中文).
+2. Copy every single line of the original code exactly as-is, and add a short Chinese comment (用中文注释) at the end of each code line using # as the comment prefix. Place the comment at the very end of the line. Do NOT omit any lines. The output must be the complete original code with Chinese comments added inline. All comments MUST be in Chinese (中文).
 
 Respond ONLY in this exact format:
 
@@ -341,6 +341,107 @@ VOCAB: <word/phrase - Chinese> | <word/phrase - Chinese>
 
         var json = await response.Content.ReadFromJsonAsync<JsonElement>();
         return json.GetProperty("choices")[0].GetProperty("message").GetProperty("content").GetString() ?? "";
+    }
+
+    // ── Exam Scoring ────────────────────────────────────────────────────────
+
+    public async Task<ExamScoreResult> ScoreExamAsync(ExamScoreRequest req)
+    {
+        var sb = new StringBuilder();
+        sb.AppendLine("You are an English exam grader. Grade each answer below strictly and return scores.");
+        sb.AppendLine();
+        sb.AppendLine("Scoring rules:");
+        sb.AppendLine("For English/Daily type (max 100 per card):");
+        sb.AppendLine("  - Spelling mistake or grammar error: -5 each");
+        sb.AppendLine("  - Overall meaning has deviation: -20");
+        sb.AppendLine("  - Meaning completely wrong or blank: -50");
+        sb.AppendLine("For Code type (max 100 per card, 5 blanks × 20 pts each):");
+        sb.AppendLine("  - Each blank: correct = 20 pts, wrong/blank = 0 pts");
+        sb.AppendLine("  - Compare semantically, not literally — same meaning = correct");
+        sb.AppendLine();
+        sb.AppendLine("Respond ONLY with this exact format, one [ANSWER] block per input:");
+        sb.AppendLine();
+        sb.AppendLine("[ANSWER]");
+        sb.AppendLine("ID: <entryId>");
+        sb.AppendLine("SCORE: <0-100>");
+        sb.AppendLine("DEDUCTION: <total deducted>");
+        sb.AppendLine("COMMENT: <brief Chinese feedback, 1-2 sentences>");
+        sb.AppendLine();
+
+        foreach (var ans in req.Answers)
+        {
+            sb.AppendLine($"[ANSWER]");
+            sb.AppendLine($"ID: {ans.EntryId}");
+            sb.AppendLine($"TYPE: {ans.Type}");
+
+            if (ans.Type == "code")
+            {
+                var expected = ans.CodeBlanks.Split("|||");
+                var inputs   = ans.CodeInputs.Split("|||");
+                sb.AppendLine("Blanks to grade:");
+                for (int i = 0; i < Math.Min(expected.Length, 5); i++)
+                {
+                    var exp = i < expected.Length ? expected[i] : "";
+                    var inp = i < inputs.Length   ? inputs[i]   : "";
+                    sb.AppendLine($"  Blank {i + 1}: expected=\"{exp}\" user=\"{inp}\"");
+                }
+            }
+            else
+            {
+                sb.AppendLine($"PROMPT: {ans.Prompt}");
+                sb.AppendLine($"EXPECTED: {ans.Expected}");
+                sb.AppendLine($"USER_INPUT: {ans.Input}");
+            }
+            sb.AppendLine();
+        }
+
+        var text = await CallAiRawAsync(sb.ToString());
+        return ParseExamScore(text, req.Answers);
+    }
+
+    private static ExamScoreResult ParseExamScore(string text, List<ExamAnswer> answers)
+    {
+        var feedbacks = new List<AnswerFeedback>();
+        var blocks = text.Split("[ANSWER]", StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries);
+
+        foreach (var block in blocks)
+        {
+            var fb = new AnswerFeedback();
+            int parsedId = -1;
+            foreach (var row in block.Split('\n', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries))
+            {
+                if (row.StartsWith("ID:", StringComparison.OrdinalIgnoreCase)
+                    && int.TryParse(row[3..].Trim(), out var id))
+                    parsedId = id;
+                else if (row.StartsWith("SCORE:", StringComparison.OrdinalIgnoreCase)
+                    && int.TryParse(row[6..].Trim(), out var sc))
+                    fb.Score = Math.Clamp(sc, 0, 100);
+                else if (row.StartsWith("DEDUCTION:", StringComparison.OrdinalIgnoreCase)
+                    && int.TryParse(row[10..].Trim(), out var ded))
+                    fb.Deduction = ded;
+                else if (row.StartsWith("COMMENT:", StringComparison.OrdinalIgnoreCase))
+                    fb.Comment = row[8..].Trim();
+            }
+            if (parsedId >= 0)
+            {
+                fb.EntryId = parsedId;
+                feedbacks.Add(fb);
+            }
+        }
+
+        // Fill in any missing entries with 0 score
+        var gradedIds = feedbacks.Select(f => f.EntryId).ToHashSet();
+        foreach (var ans in answers)
+        {
+            if (!gradedIds.Contains(ans.EntryId))
+                feedbacks.Add(new AnswerFeedback { EntryId = ans.EntryId, Score = 0, Deduction = 100, Comment = "未收到评分" });
+        }
+
+        var total = feedbacks.Count > 0
+            ? (int)Math.Round(feedbacks.Average(f => f.Score))
+            : 0;
+
+        return new ExamScoreResult { TotalScore = total, Feedbacks = feedbacks };
     }
 
     private static string ComputeHash(string input)

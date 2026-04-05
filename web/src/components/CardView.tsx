@@ -208,12 +208,17 @@ export default function CardView({ categories, showToast }: Props) {
               onClick={() => handleFlip(entry.id)}
             >
               <div className="card-index">#{i + 1}</div>
-              <div className="card-front">{entry.original}</div>
+              <div
+                className="card-front"
+                onClick={isFlipped ? e => e.stopPropagation() : undefined}
+              >{entry.original}</div>
               <div className="card-hint">{isFlipped ? '点击折叠 ▲' : '点击查看详情 ▼'}</div>
 
               {isFlipped && (
                 <>
-                  {renderBack(entry)}
+                  <div onClick={e => e.stopPropagation()}>
+                    {renderBack(entry)}
+                  </div>
                   <div className="color-picker-row" style={{ marginTop: 12 }}>
                     <span className="color-label">标记：</span>
                     <div id="color-btns">
