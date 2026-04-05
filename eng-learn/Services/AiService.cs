@@ -265,23 +265,24 @@ Code:
             : topic;
 
         var prompt = $"""
-Generate a short natural English conversation between two people (A and B) about {topicStr}.
+Generate a short English conversation based on the following scenario: {topicStr}
 
 Rules:
 - 4–6 exchanges total
-- Natural, casual spoken English
-- For each line provide the Chinese translation and 2–3 key vocabulary items
+- If the scenario specifies roles or personas (e.g. interviewer and candidate, doctor and patient, teacher and student), use those role names as the speaker labels and make the dialogue true to that scenario
+- Match the language register to the scenario: formal/professional for interviews or workplace settings, casual for everyday topics
+- For each line provide the Chinese translation and 2–3 key vocabulary items from that line
 
 Respond ONLY in this exact format (repeat [LINE] blocks, no other text):
 
 [LINE]
-SPEAKER: A
+SPEAKER: <role name or A>
 EN: <English sentence>
 ZH: <Chinese translation>
 VOCAB: <word/phrase - Chinese> | <word/phrase - Chinese>
 
 [LINE]
-SPEAKER: B
+SPEAKER: <role name or B>
 EN: <English sentence>
 ZH: <Chinese translation>
 VOCAB: <word/phrase - Chinese> | <word/phrase - Chinese>

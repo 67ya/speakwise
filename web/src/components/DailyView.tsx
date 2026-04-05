@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useRef } from 'react';
 import { analyzeDaily, randomConversation } from '../api/daily';
 import { createEntry, getEntries } from '../api/entries';
 import type { Category, DailyLine } from '../types';
@@ -104,46 +104,141 @@ export default function DailyView({ categories, defaultCategoryId, onSaved, show
 
   const isLoading = loading || randomLoading;
 
+  // 跟手滑动切换
+  const touchStartY  = useRef(0);
+  const touchStartX  = useRef(0);
+  const [dragY, setDragY]         = useState(0);
+  const [isSnapping, setIsSnapping] = useState(false);
+  const currentIndex = lines.findIndex(l => l.id === selectedId);
+
+  const snapTo = (nextIndex: number, direction: number) => {
+    const target = direction * window.innerHeight;
+    setIsSnapping(true);
+    setDragY(target);
+    setTimeout(() => {
+      setSelectedId(lines[nextIndex].id);
+      setDragY(0);
+      setIsSnapping(false);
+    }, 260);
+  };
+
+  const goToNext = () => { if (currentIndex < lines.length - 1) snapTo(currentIndex + 1, -1); };
+  const goToPrev = () => { if (currentIndex > 0)               snapTo(currentIndex - 1,  1); };
+
+  const handleTouchStart = (e: React.TouchEvent) => {
+    if (isSnapping) return;
+    touchStartY.current = e.touches[0].clientY;
+    touchStartX.current = e.touches[0].clientX;
+  };
+  const handleTouchMove = (e: React.TouchEvent) => {
+    if (isSnapping) return;
+    const dy = e.touches[0].clientY - touchStartY.current;
+    const dx = Math.abs(e.touches[0].clientX - touchStartX.current);
+    if (Math.abs(dy) < dx * 0.8) return; // 横向滑动不处理
+    if (dy < 0 && currentIndex >= lines.length - 1) return; // 已是最后一句
+    if (dy > 0 && currentIndex <= 0) return;               // 已是第一句
+    setDragY(dy);
+  };
+  const handleTouchEnd = () => {
+    if (isSnapping) return;
+    const threshold = 70;
+    if (dragY < -threshold && currentIndex < lines.length - 1) {
+      snapTo(currentIndex + 1, -1);
+    } else if (dragY > threshold && currentIndex > 0) {
+      snapTo(currentIndex - 1, 1);
+    } else {
+      setIsSnapping(true);
+      setDragY(0);
+      setTimeout(() => setIsSnapping(false), 260);
+    }
+  };
+
+  // 相邻卡片（拖动时显示）
+  const adjacentIndex = dragY < 0 ? currentIndex + 1 : currentIndex - 1;
+  const adjacentLine  = adjacentIndex >= 0 && adjacentIndex < lines.length ? lines[adjacentIndex] : null;
+
+  const renderCardBody = (line: DailyLine, withSave: boolean) => (
+    <>
+      <div className="detail-section">
+        <div className="section-label">中文原句</div>
+        <p style={{ color: '#555' }}>{line.chinese}</p>
+      </div>
+      <div className="detail-section">
+        <div className="section-label-row">
+          <div className="section-label">口语翻译</div>
+          <button className="btn-speak" onClick={() => speak(line.spoken)} title="朗读英文">🔊</button>
+        </div>
+        <p>{line.spoken}</p>
+      </div>
+      <div className="detail-section">
+        <div className="section-label">词汇解析</div>
+        <div className="analysis-block">{renderBlock(line.vocabulary)}</div>
+      </div>
+      {withSave && (
+        <div className="detail-section">
+          <div className="result-actions">
+            <select className="category-select" value={categoryId} onChange={e => setCategoryId(e.target.value)}>
+              <option value="">— 请选择分类 —</option>
+              {categories.map(c => <option key={c.id} value={c.id}>{c.name}</option>)}
+            </select>
+            <button className="btn btn-success" onClick={handleSave}>保存到笔记本</button>
+          </div>
+        </div>
+      )}
+    </>
+  );
+
+  const transition = isSnapping ? 'transform 0.26s cubic-bezier(0.25,0.46,0.45,0.94)' : 'none';
+
   const detailPanel = (
     <div className="daily-detail">
       {!selected ? (
         <div className="detail-ph">← 从左侧选择一句话查看详情</div>
       ) : (
-        <div>
-          <button className="btn-back" onClick={() => setMobileDetail(false)}>← 返回列表</button>
-
-          <div className="detail-section">
-            <div className="section-label">中文原句</div>
-            <p style={{ color: '#555' }}>{selected.chinese}</p>
+        <>
+          <div className="daily-detail-topbar">
+            <button className="btn-back" onClick={() => setMobileDetail(false)}>← 返回</button>
+            {lines.length > 1 && (
+              <div className="daily-card-nav">
+                <button className="card-nav-btn" onClick={goToPrev} disabled={currentIndex === 0}>‹</button>
+                <span className="card-nav-pos">{currentIndex + 1} / {lines.length}</span>
+                <button className="card-nav-btn" onClick={goToNext} disabled={currentIndex === lines.length - 1}>›</button>
+              </div>
+            )}
           </div>
 
-          <div className="detail-section">
-            <div className="section-label-row">
-              <div className="section-label">口语翻译</div>
-              <button className="btn-speak" onClick={() => speak(selected.spoken)} title="朗读英文">🔊</button>
+          <div
+            className="daily-swipe-area"
+            onTouchStart={handleTouchStart}
+            onTouchMove={handleTouchMove}
+            onTouchEnd={handleTouchEnd}
+          >
+            {/* 当前卡片 */}
+            <div
+              className="daily-card-slide"
+              style={{
+                transform: `translateY(${dragY}px)`,
+                transition,
+                opacity: Math.max(0.2, 1 - Math.abs(dragY) / 500),
+              }}
+            >
+              {renderCardBody(selected, true)}
             </div>
-            <p>{selected.spoken}</p>
-          </div>
 
-          <div className="detail-section">
-            <div className="section-label">词汇解析</div>
-            <div className="analysis-block">{renderBlock(selected.vocabulary)}</div>
-          </div>
-
-          <div className="detail-section">
-            <div className="result-actions">
-              <select
-                className="category-select"
-                value={categoryId}
-                onChange={e => setCategoryId(e.target.value)}
+            {/* 相邻卡片（跟随拖动出现） */}
+            {adjacentLine && (
+              <div
+                className="daily-card-slide daily-card-adjacent"
+                style={{
+                  transform: `translateY(calc(${dragY < 0 ? '100%' : '-100%'} + ${dragY}px))`,
+                  transition,
+                }}
               >
-                <option value="">— 请选择分类 —</option>
-                {categories.map(c => <option key={c.id} value={c.id}>{c.name}</option>)}
-              </select>
-              <button className="btn btn-success" onClick={handleSave}>保存到笔记本</button>
-            </div>
+                {renderCardBody(adjacentLine, false)}
+              </div>
+            )}
           </div>
-        </div>
+        </>
       )}
     </div>
   );

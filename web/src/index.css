@@ -315,6 +315,59 @@ body {
   line-height: 1.6;
 }
 
+/* ── Daily swipe cards ──────────────────────────────────── */
+.daily-detail {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  overflow: hidden;
+}
+.daily-swipe-area {
+  position: relative;
+  overflow: hidden;
+  flex: 1;
+  min-height: 0;
+}
+.daily-card-slide {
+  position: absolute;
+  inset: 0;
+  overflow-y: auto;
+  padding: 0 16px 32px;
+  will-change: transform;
+}
+.daily-card-adjacent {
+  pointer-events: none;
+}
+
+/* ── Daily detail topbar (back + nav) ──────────────────── */
+.daily-detail-topbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 12px;
+}
+.daily-card-nav {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.card-nav-btn {
+  background: #E8EAF6;
+  border: none;
+  border-radius: 6px;
+  width: 32px;
+  height: 32px;
+  font-size: 18px;
+  cursor: pointer;
+  color: #3949AB;
+  line-height: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.card-nav-btn:disabled { opacity: .3; cursor: default; }
+.card-nav-pos { font-size: 13px; color: #666; min-width: 36px; text-align: center; }
+
 /* ── Card (flashcard) view ──────────────────────────────── */
 .card-toolbar {
   display: flex;
