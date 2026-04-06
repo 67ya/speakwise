@@ -348,12 +348,19 @@ VOCAB: <word/phrase - Chinese> | <word/phrase - Chinese>
     public async Task<ExamScoreResult> ScoreExamAsync(ExamScoreRequest req)
     {
         var sb = new StringBuilder();
-        sb.AppendLine("You are an English exam grader. Grade each answer below strictly and return scores.");
+        sb.AppendLine("You are an English exam grader. The user's answers are entered via speech recognition, so treat them accordingly.");
+        sb.AppendLine();
+        sb.AppendLine("IMPORTANT — always ignore these speech recognition artifacts (zero deduction):");
+        sb.AppendLine("  - Capitalization differences (e.g. 'i' instead of 'I', 'english' instead of 'English')");
+        sb.AppendLine("  - Missing or extra punctuation (commas, periods, apostrophes — e.g. 'dont' vs \"don't\", 'im' vs \"I'm\")");
+        sb.AppendLine("  - Extra or missing spaces");
+        sb.AppendLine("  - Filler pauses transcribed as words (e.g. 'uh', 'um', 'like') — ignore them");
+        sb.AppendLine("  - Minor word repetitions caused by speech hesitation (e.g. 'I I work' → treat as 'I work')");
+        sb.AppendLine("  - Homophones or near-homophones clearly caused by speech recognition error");
         sb.AppendLine();
         sb.AppendLine("Scoring rules:");
         sb.AppendLine("For English/Daily type (max 100 per card):");
-        sb.AppendLine("  - Ignore: capitalization errors, extra/missing spaces, punctuation differences — these do NOT deduct any points");
-        sb.AppendLine("  - Spelling mistake (wrong letters in a word) or clear grammar error: -5 each");
+        sb.AppendLine("  - Spelling mistake (wrong letters, not a speech artifact) or clear grammar error: -5 each");
         sb.AppendLine("  - Overall meaning has deviation: -20");
         sb.AppendLine("  - Meaning completely wrong or blank: -50");
         sb.AppendLine("For Code type (max 100 per card, 5 blanks × 20 pts each):");
@@ -367,6 +374,7 @@ VOCAB: <word/phrase - Chinese> | <word/phrase - Chinese>
         sb.AppendLine("SCORE: <0-100>");
         sb.AppendLine("DEDUCTION: <total deducted>");
         sb.AppendLine("COMMENT: <brief Chinese feedback, 1-2 sentences>");
+        sb.AppendLine("MARKED: <copy the user's answer exactly, but wrap each wrong word or phrase with {{ERR}}...{{/ERR}}. If no errors, copy as-is. Skip this field for code type.>");
         sb.AppendLine();
 
         foreach (var ans in req.Answers)
@@ -422,6 +430,8 @@ VOCAB: <word/phrase - Chinese> | <word/phrase - Chinese>
                     fb.Deduction = ded;
                 else if (row.StartsWith("COMMENT:", StringComparison.OrdinalIgnoreCase))
                     fb.Comment = row[8..].Trim();
+                else if (row.StartsWith("MARKED:", StringComparison.OrdinalIgnoreCase))
+                    fb.MarkedAnswer = row[7..].Trim();
             }
             if (parsedId >= 0)
             {

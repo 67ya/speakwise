@@ -35,10 +35,11 @@ export interface ExamAnswer {
 }
 
 export interface AnswerFeedback {
-  entryId:   number;
-  score:     number;
-  deduction: number;
-  comment:   string;
+  entryId:      number;
+  score:        number;
+  deduction:    number;
+  comment:      string;
+  markedAnswer: string;
 }
 
 export interface ExamScoreResult {

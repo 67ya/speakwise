@@ -25,8 +25,9 @@ public class ExamScoreResult
 
 public class AnswerFeedback
 {
-    public int EntryId     { get; set; }
-    public int Score       { get; set; }   // points for this card (max 100)
-    public int Deduction   { get; set; }   // how many points deducted
-    public string Comment  { get; set; } = "";
+    public int EntryId          { get; set; }
+    public int Score            { get; set; }   // points for this card (max 100)
+    public int Deduction        { get; set; }   // how many points deducted
+    public string Comment       { get; set; } = "";
+    public string MarkedAnswer  { get; set; } = ""; // user answer with {{ERR}}...{{/ERR}} markers
 }

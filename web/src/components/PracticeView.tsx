@@ -159,27 +159,37 @@ export default function PracticeView({ categories, onSaved, showToast }: Props) 
     const inCat = existing.filter(e => e.categoryId === parseInt(batchCatId));
     const existingSet = new Set(inCat.map(e => e.original));
 
-    setBatchProgress({ done: 0, total: batchItems.length, err: 0 });
+    const total = batchItems.length;
     let done = 0, err = 0;
+    setBatchProgress({ done: 0, total, err: 0 });
 
-    for (const item of batchItems) {
-      try {
-        if (existingSet.has(item.sentence)) { done++; setBatchProgress({ done, total: batchItems.length, err }); continue; }
-        const r = await analyze(item.sentence, false, 'general');
-        await createEntry({
-          question:    item.question || '',
-          original:    item.sentence,
-          spoken:      r.spoken,
-          translation: r.translation,
-          analysis:    r.analysis,
-          corrections: r.corrections,
-          categoryId:  parseInt(batchCatId),
-        });
-        existingSet.add(item.sentence);
-      } catch { err++; }
-      done++;
-      setBatchProgress({ done, total: batchItems.length, err });
-    }
+    const CONCURRENCY = 10;
+    const queue = [...batchItems];
+
+    const worker = async () => {
+      while (queue.length > 0) {
+        const item = queue.shift()!;
+        try {
+          if (!existingSet.has(item.sentence)) {
+            const r = await analyze(item.sentence, false, 'general');
+            await createEntry({
+              question:    item.question || '',
+              original:    item.sentence,
+              spoken:      r.spoken,
+              translation: r.translation,
+              analysis:    r.analysis,
+              corrections: r.corrections,
+              categoryId:  parseInt(batchCatId),
+            });
+            existingSet.add(item.sentence);
+          }
+        } catch { err++; }
+        done++;
+        setBatchProgress({ done, total, err });
+      }
+    };
+
+    await Promise.all(Array.from({ length: Math.min(CONCURRENCY, total) }, worker));
 
     showToast(`导入完成：${done - err} 条成功${err > 0 ? `，${err} 条失败` : ''}`);
     setBatchItems([]);

@@ -129,6 +129,39 @@ export default function CardView({ categories, showToast }: Props) {
       </div>
     );
 
+    if (isInterview) return (
+      <div className="card-back">
+        <div className="detail-section">
+          <div className="section-label">我的原始答案</div>
+          <p>{entry.original}</p>
+        </div>
+        {entry.spoken && (
+          <div className="detail-section">
+            <div className="section-label">面试优化答案</div>
+            <p>{entry.spoken}</p>
+          </div>
+        )}
+        {entry.translation && (
+          <div className="detail-section">
+            <div className="section-label">中文翻译</div>
+            <p>{entry.translation}</p>
+          </div>
+        )}
+        {entry.analysis && (
+          <div className="detail-section">
+            <div className="section-label">词汇解析</div>
+            <div className="analysis-block">{renderLines(entry.analysis)}</div>
+          </div>
+        )}
+        {entry.corrections && entry.corrections !== '—' && (
+          <div className="detail-section">
+            <div className="section-label">内容优化说明</div>
+            <div className="analysis-block">{renderLines(entry.corrections)}</div>
+          </div>
+        )}
+      </div>
+    );
+
     if (isDaily) return (
       <div className="card-back">
         <div className="detail-section">

@@ -21,16 +21,17 @@ interface ExamCard {
 
 // Stored per-item in history
 interface HistoryItem {
-  cardType:   CardType;
-  prompt:     string;
-  userInput:  string;
-  expected:   string;
-  score:      number;
-  deduction:  number;
-  comment:    string;
-  spoken?:    string;
-  blanks?:    { lineIndex: number; comment: string }[];
-  codeInputs?: string[];
+  cardType:     CardType;
+  prompt:       string;
+  userInput:    string;
+  markedAnswer: string;
+  expected:     string;
+  score:        number;
+  deduction:    number;
+  comment:      string;
+  spoken?:      string;
+  blanks?:      { lineIndex: number; comment: string }[];
+  codeInputs?:  string[];
 }
 
 const TOTAL_CARDS = 10;
@@ -109,6 +110,22 @@ function renderCodeWithBlanks(
   );
 }
 
+// Render answer with {{ERR}}...{{/ERR}} marked in red
+function MarkedAnswer({ text }: { text: string }) {
+  if (!text || !text.includes('{{ERR}}')) return <span>{text || '（未作答）'}</span>;
+  const parts = text.split(/({{ERR}}.*?{{\/ERR}})/g);
+  return (
+    <>
+      {parts.map((p, i) => {
+        const m = p.match(/^{{ERR}}(.*){{\/ERR}}$/);
+        return m
+          ? <span key={i} className="answer-err">{m[1]}</span>
+          : <span key={i}>{p}</span>;
+      })}
+    </>
+  );
+}
+
 // Shared result list renderer (used in result phase + review phase)
 function ResultList({ items }: { items: HistoryItem[] }) {
   if (!items?.length) return <div className="empty-tip" style={{ margin: '40px auto' }}>暂无题目数据（旧版记录不支持回顾）</div>;
@@ -126,7 +143,9 @@ function ResultList({ items }: { items: HistoryItem[] }) {
           <div className="result-item-prompt">{item.prompt}</div>
           {item.cardType !== 'code' && (
             <>
-              <div className="result-item-user">你的答案：{item.userInput || '（未作答）'}</div>
+              <div className="result-item-user">
+                你的答案：<MarkedAnswer text={item.markedAnswer || item.userInput} />
+              </div>
               <div className="result-item-expected">参考答案：{item.expected}</div>
             </>
           )}
@@ -284,13 +303,14 @@ export default function TestView({ dailyCategoryId, codeCategoryId, showToast }:
         const prompt   = c.cardType === 'daily' ? c.entry.original : (c.entry.translation ?? c.entry.original);
         const expected = c.cardType === 'daily' ? c.entry.spoken   : c.entry.original;
         return {
-          cardType:  c.cardType,
+          cardType:     c.cardType,
           prompt,
-          userInput: currentAnswers.get(c.entry.id) ?? '',
+          userInput:    currentAnswers.get(c.entry.id) ?? '',
+          markedAnswer: fb?.markedAnswer ?? '',
           expected,
-          score:     fb?.score     ?? 0,
-          deduction: fb?.deduction ?? 100,
-          comment:   fb?.comment   ?? '',
+          score:        fb?.score     ?? 0,
+          deduction:    fb?.deduction ?? 100,
+          comment:      fb?.comment   ?? '',
         };
       });
 
