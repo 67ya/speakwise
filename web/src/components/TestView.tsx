@@ -289,15 +289,16 @@ export default function TestView({ dailyCategoryId, codeCategoryId, showToast }:
         if (c.cardType === 'code' && c.blanks) {
           return {
             cardType:   'code',
-            prompt:     c.entry.original,
-            userInput:  '',
-            expected:   '',
-            score:      fb?.score      ?? 0,
-            deduction:  fb?.deduction  ?? 100,
-            comment:    fb?.comment    ?? '',
-            spoken:     c.entry.spoken,
-            blanks:     c.blanks,
-            codeInputs: c.blanks.map((_, i) => inp[i] ?? ''),
+            prompt:       c.entry.original,
+            userInput:    '',
+            markedAnswer: '',
+            expected:     '',
+            score:        fb?.score      ?? 0,
+            deduction:    fb?.deduction  ?? 100,
+            comment:      fb?.comment    ?? '',
+            spoken:       c.entry.spoken,
+            blanks:       c.blanks,
+            codeInputs:   c.blanks.map((_, i) => inp[i] ?? ''),
           };
         }
         const prompt   = c.cardType === 'daily' ? c.entry.original : (c.entry.translation ?? c.entry.original);
