@@ -589,3 +589,23 @@ body {
   height: 100%; background: #3949AB; border-radius: 3px;
   transition: width 0.3s ease;
 }
+.batch-dropzone {
+  border: 2px dashed #C5CAE9; border-radius: 8px; padding: 20px;
+  text-align: center; cursor: pointer; color: #7986CB; font-size: 14px;
+  display: flex; align-items: center; justify-content: center; gap: 8px;
+  transition: border-color .15s, background .15s; margin-bottom: 10px;
+}
+.batch-dropzone:hover { border-color: #3949AB; background: #F3F4FF; }
+.batch-dropzone--over { border-color: #3949AB; background: #E8EAF6; }
+.batch-dropzone-icon { font-size: 20px; }
+.batch-paste-row { display: flex; gap: 8px; align-items: flex-start; margin-bottom: 10px; }
+.batch-paste-area {
+  flex: 1; border: 1px solid #ddd; border-radius: 6px; padding: 8px 10px;
+  font-size: 13px; font-family: 'Consolas', monospace; resize: vertical;
+}
+.batch-paste-area:focus { outline: none; border-color: #3949AB; }
+.batch-preview-header { display: flex; align-items: center; gap: 10px; margin-bottom: 6px; }
+.btn-clear-batch {
+  background: none; border: none; color: #999; cursor: pointer; font-size: 12px; padding: 2px 6px;
+}
+.btn-clear-batch:hover { color: #e53935; }

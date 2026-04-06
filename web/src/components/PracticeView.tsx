@@ -116,23 +116,39 @@ export default function PracticeView({ categories, onSaved, showToast }: Props) 
     onSaved();
   };
 
+  const [pasteText, setPasteText]   = useState('');
+  const [isDragOver, setIsDragOver] = useState(false);
+
+  const parseJson = (text: string) => {
+    try {
+      const json = JSON.parse(text);
+      if (!Array.isArray(json)) { showToast('JSON 格式错误：根节点须为数组'); return; }
+      const items: BatchItem[] = json
+        .filter((x: any) => typeof x.sentence === 'string' && x.sentence.trim())
+        .map((x: any) => ({ question: x.question?.trim() || '', sentence: x.sentence.trim() }));
+      if (items.length === 0) { showToast('未找到有效条目（需含 sentence 字段）'); return; }
+      setBatchItems(items);
+      setPasteText('');
+    } catch { showToast('JSON 解析失败，请检查格式'); }
+  };
+
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
     const reader = new FileReader();
-    reader.onload = ev => {
-      try {
-        const json = JSON.parse(ev.target?.result as string);
-        if (!Array.isArray(json)) { showToast('JSON 格式错误：根节点须为数组'); return; }
-        const items: BatchItem[] = json
-          .filter((x: any) => typeof x.sentence === 'string' && x.sentence.trim())
-          .map((x: any) => ({ question: x.question?.trim() || '', sentence: x.sentence.trim() }));
-        if (items.length === 0) { showToast('未找到有效条目（需含 sentence 字段）'); return; }
-        setBatchItems(items);
-      } catch { showToast('JSON 解析失败，请检查文件格式'); }
-    };
+    reader.onload = ev => parseJson(ev.target?.result as string);
     reader.readAsText(file);
     e.target.value = '';
+  };
+
+  const handleDrop = (e: React.DragEvent) => {
+    e.preventDefault();
+    setIsDragOver(false);
+    const file = e.dataTransfer.files?.[0];
+    if (!file) return;
+    const reader = new FileReader();
+    reader.onload = ev => parseJson(ev.target?.result as string);
+    reader.readAsText(file);
   };
 
   const handleBatchImport = async () => {
@@ -245,13 +261,43 @@ export default function PracticeView({ categories, onSaved, showToast }: Props) 
             <p className="batch-desc">
               JSON 格式：<code>{'[{"question":"问题(可选)","sentence":"英文句子"}, ...]'}</code>
             </p>
-            <div className="batch-row">
+
+            {/* 拖拽 / 点击选文件区域 */}
+            <div
+              className={`batch-dropzone${isDragOver ? ' batch-dropzone--over' : ''}`}
+              onDragOver={e => { e.preventDefault(); setIsDragOver(true); }}
+              onDragLeave={() => setIsDragOver(false)}
+              onDrop={handleDrop}
+              onClick={() => fileRef.current?.click()}
+            >
               <input ref={fileRef} type="file" accept=".json" style={{ display: 'none' }} onChange={handleFileChange} />
-              <button className="btn btn-secondary" onClick={() => fileRef.current?.click()}>选择 JSON 文件</button>
-              {batchItems.length > 0 && <span className="batch-count">已加载 {batchItems.length} 条</span>}
+              <span className="batch-dropzone-icon">📂</span>
+              <span>拖入 JSON 文件，或点击选择</span>
             </div>
+
+            {/* 粘贴区域 */}
+            <div className="batch-paste-row">
+              <textarea
+                className="batch-paste-area"
+                rows={4}
+                placeholder='或直接粘贴 JSON，例如：[{"sentence":"I work at a tech company."}]'
+                value={pasteText}
+                onChange={e => setPasteText(e.target.value)}
+              />
+              <button
+                className="btn btn-secondary"
+                style={{ alignSelf: 'flex-end' }}
+                disabled={!pasteText.trim()}
+                onClick={() => parseJson(pasteText)}
+              >解析</button>
+            </div>
+
             {batchItems.length > 0 && (
               <>
+                <div className="batch-preview-header">
+                  <span className="batch-count">已加载 {batchItems.length} 条</span>
+                  <button className="btn-clear-batch" onClick={() => setBatchItems([])}>✕ 清空</button>
+                </div>
                 <div className="batch-preview">
                   {batchItems.slice(0, 5).map((it, i) => (
                     <div key={i} className="batch-preview-item">
