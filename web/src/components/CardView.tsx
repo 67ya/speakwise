@@ -2,8 +2,9 @@ import { useState, useCallback } from 'react';
 import { getEntries, updateColor } from '../api/entries';
 import type { Entry, Category } from '../types';
 
-const DAILY_CAT = '中英天天练';
-const CODE_CAT  = '代码解析';
+const DAILY_CAT     = '中英天天练';
+const CODE_CAT      = '代码解析';
+const INTERVIEW_CAT = '面试';
 const P1_COLOR  = '#E0E0E0';
 const HIGH_COLORS = new Set(['#FFE0B2', '#F8BBD9', '#9FA8DA']); // P5, P6, P7
 
@@ -107,9 +108,10 @@ export default function CardView({ categories, showToast }: Props) {
     }
   };
 
-  const catName = categories.find(c => c.id === parseInt(selectedCatId))?.name ?? '';
-  const isDaily = catName === DAILY_CAT;
-  const isCode  = catName === CODE_CAT;
+  const catName     = categories.find(c => c.id === parseInt(selectedCatId))?.name ?? '';
+  const isDaily     = catName === DAILY_CAT;
+  const isCode      = catName === CODE_CAT;
+  const isInterview = catName.includes(INTERVIEW_CAT);
 
   const renderBack = (entry: Entry) => {
     if (isCode) return (
@@ -211,7 +213,7 @@ export default function CardView({ categories, showToast }: Props) {
               <div
                 className="card-front"
                 onClick={isFlipped ? e => e.stopPropagation() : undefined}
-              >{entry.original}</div>
+              >{isInterview && entry.question ? entry.question : entry.original}</div>
               <div className="card-hint">{isFlipped ? '点击折叠 ▲' : '点击查看详情 ▼'}</div>
 
               {isFlipped && (

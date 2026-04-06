@@ -9,6 +9,14 @@ export interface ExamHistoryRecord {
   itemsJson:   string;
 }
 
+export interface EntryScoreRecord { entryId: number; lastScore: number; examCount: number; }
+
+export const getEntryScores = () =>
+  client.get<EntryScoreRecord[]>('/api/entry-scores').then(r => r.data);
+
+export const saveEntryScores = (items: { entryId: number; score: number }[]) =>
+  client.post('/api/entry-scores', items);
+
 export const getExamHistory = () =>
   client.get<ExamHistoryRecord[]>('/api/exam/history').then(r => r.data);
 

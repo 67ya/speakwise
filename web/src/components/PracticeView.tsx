@@ -4,6 +4,8 @@ import { createEntry, getEntries } from '../api/entries';
 import { useVoiceInput } from '../hooks/useVoiceInput';
 import type { Category, PendingEntry, PracticeType } from '../types';
 
+interface BatchItem { question?: string; sentence: string; }
+
 const PRACTICE_TYPES: { value: PracticeType; label: string }[] = [
   { value: 'general',   label: '日常英语优化' },
   { value: 'interview', label: '专业面试答案' },
@@ -47,6 +49,13 @@ export default function PracticeView({ categories, onSaved, showToast }: Props) 
   const [sentenceErr, setSentenceErr]   = useState(false);
   const [practiceType, setPracticeType] = useState<PracticeType>('general');
   const sentenceRef = useRef<HTMLTextAreaElement>(null);
+
+  // 批量导入
+  const [batchOpen, setBatchOpen]         = useState(false);
+  const [batchItems, setBatchItems]       = useState<BatchItem[]>([]);
+  const [batchCatId, setBatchCatId]       = useState('');
+  const [batchProgress, setBatchProgress] = useState<{ done: number; total: number; err: number } | null>(null);
+  const fileRef = useRef<HTMLInputElement>(null);
 
   const onQuestionVoice = useCallback((text: string) => {
     setQuestion(prev => prev ? prev + ' ' + text : text);
@@ -104,6 +113,62 @@ export default function PracticeView({ categories, onSaved, showToast }: Props) 
     setSentence('');
     setResult(null);
     showToast('已保存到笔记本 ✓');
+    onSaved();
+  };
+
+  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    const reader = new FileReader();
+    reader.onload = ev => {
+      try {
+        const json = JSON.parse(ev.target?.result as string);
+        if (!Array.isArray(json)) { showToast('JSON 格式错误：根节点须为数组'); return; }
+        const items: BatchItem[] = json
+          .filter((x: any) => typeof x.sentence === 'string' && x.sentence.trim())
+          .map((x: any) => ({ question: x.question?.trim() || '', sentence: x.sentence.trim() }));
+        if (items.length === 0) { showToast('未找到有效条目（需含 sentence 字段）'); return; }
+        setBatchItems(items);
+      } catch { showToast('JSON 解析失败，请检查文件格式'); }
+    };
+    reader.readAsText(file);
+    e.target.value = '';
+  };
+
+  const handleBatchImport = async () => {
+    if (!batchCatId) { showToast('请先选择分类'); return; }
+    if (batchItems.length === 0) return;
+
+    const existing = await getEntries();
+    const inCat = existing.filter(e => e.categoryId === parseInt(batchCatId));
+    const existingSet = new Set(inCat.map(e => e.original));
+
+    setBatchProgress({ done: 0, total: batchItems.length, err: 0 });
+    let done = 0, err = 0;
+
+    for (const item of batchItems) {
+      try {
+        if (existingSet.has(item.sentence)) { done++; setBatchProgress({ done, total: batchItems.length, err }); continue; }
+        const r = await analyze(item.sentence, false, 'general');
+        await createEntry({
+          question:    item.question || '',
+          original:    item.sentence,
+          spoken:      r.spoken,
+          translation: r.translation,
+          analysis:    r.analysis,
+          corrections: r.corrections,
+          categoryId:  parseInt(batchCatId),
+        });
+        existingSet.add(item.sentence);
+      } catch { err++; }
+      done++;
+      setBatchProgress({ done, total: batchItems.length, err });
+    }
+
+    showToast(`导入完成：${done - err} 条成功${err > 0 ? `，${err} 条失败` : ''}`);
+    setBatchItems([]);
+    setBatchProgress(null);
+    setBatchOpen(false);
     onSaved();
   };
 
@@ -169,6 +234,57 @@ export default function PracticeView({ categories, onSaved, showToast }: Props) 
           <span>AI 正在分析，请稍候...</span>
         </div>
       )}
+
+      {/* 批量导入 */}
+      <div className="batch-section">
+        <button className="btn-batch-toggle" onClick={() => { setBatchOpen(o => !o); setBatchItems([]); setBatchProgress(null); }}>
+          {batchOpen ? '▲ 收起批量导入' : '▼ 批量导入'}
+        </button>
+        {batchOpen && (
+          <div className="batch-panel">
+            <p className="batch-desc">
+              JSON 格式：<code>{'[{"question":"问题(可选)","sentence":"英文句子"}, ...]'}</code>
+            </p>
+            <div className="batch-row">
+              <input ref={fileRef} type="file" accept=".json" style={{ display: 'none' }} onChange={handleFileChange} />
+              <button className="btn btn-secondary" onClick={() => fileRef.current?.click()}>选择 JSON 文件</button>
+              {batchItems.length > 0 && <span className="batch-count">已加载 {batchItems.length} 条</span>}
+            </div>
+            {batchItems.length > 0 && (
+              <>
+                <div className="batch-preview">
+                  {batchItems.slice(0, 5).map((it, i) => (
+                    <div key={i} className="batch-preview-item">
+                      <span className="batch-preview-index">#{i + 1}</span>
+                      {it.question && <span className="batch-preview-q">{it.question}</span>}
+                      <span className="batch-preview-s">{it.sentence}</span>
+                    </div>
+                  ))}
+                  {batchItems.length > 5 && <div className="batch-preview-more">…还有 {batchItems.length - 5} 条</div>}
+                </div>
+                <div className="batch-row" style={{ marginTop: 10 }}>
+                  <select className="category-select" value={batchCatId} onChange={e => setBatchCatId(e.target.value)}>
+                    <option value="">— 选择目标分类 —</option>
+                    {categories.map(c => <option key={c.id} value={c.id}>{c.name}</option>)}
+                  </select>
+                  <button
+                    className="btn btn-primary"
+                    disabled={!!batchProgress}
+                    onClick={handleBatchImport}
+                  >
+                    {batchProgress ? `分析中 ${batchProgress.done}/${batchProgress.total}…` : '开始导入'}
+                  </button>
+                </div>
+                {batchProgress && (
+                  <div className="batch-progress-bar">
+                    <div className="batch-progress-fill" style={{ width: `${(batchProgress.done / batchProgress.total) * 100}%` }} />
+                  </div>
+                )}
+              </>
+            )}
+          </div>
+        )}
+      </div>
 
       {result && (
         <div className="result-card">

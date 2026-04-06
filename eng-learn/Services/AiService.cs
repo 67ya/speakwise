@@ -156,7 +156,7 @@ You are an English speaking coach helping a Chinese learner express themselves i
 
 The user provides a Chinese sentence. Do the following:
 1. Write a natural spoken English version (casual, fluent — the way a native speaker would actually say it)
-2. Pick 3–5 key English words or phrases from the spoken version. For each one, give a concise Chinese meaning explanation. Do NOT include pinyin, do NOT include Chinese sentences — only the English word/phrase and its Chinese meaning.
+2. List ALL key English words and phrases from the spoken version — include every word or phrase that a Chinese learner would benefit from knowing. Do not limit the count; include as many as are useful. For each one, give a concise Chinese meaning explanation. Do NOT include pinyin, do NOT include Chinese sentences — only the English word/phrase and its Chinese meaning.
 
 Respond ONLY in this exact format:
 
@@ -271,7 +271,7 @@ Rules:
 - 6–12 exchanges total (alternate between speaker A and speaker B)
 - Always label speakers as A and B regardless of their roles in the scenario
 - Match the language register to the scenario: formal/professional for interviews or workplace settings, casual for everyday topics
-- For each line provide the Chinese translation and 2–3 key vocabulary items from that line
+- For each line provide the Chinese translation and ALL key vocabulary items from that line — every word or phrase a Chinese learner would benefit from knowing
 
 Respond ONLY in this exact format (repeat [LINE] blocks, no other text):
 

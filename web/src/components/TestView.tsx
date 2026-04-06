@@ -1,8 +1,8 @@
 import { useState, useEffect, useRef } from 'react';
 import { getEntries, updateColor } from '../api/entries';
-import { scoreExam, getExamHistory, saveExamHistory } from '../api/exam';
+import { scoreExam, getExamHistory, saveExamHistory, getEntryScores, saveEntryScores } from '../api/exam';
 import type { Entry } from '../types';
-import type { ExamAnswer, AnswerFeedback, ExamHistoryRecord } from '../api/exam';
+import type { ExamAnswer, AnswerFeedback, ExamHistoryRecord, EntryScoreRecord } from '../api/exam';
 
 interface Props {
   dailyCategoryId: number | null;
@@ -168,22 +168,47 @@ export default function TestView({ dailyCategoryId, codeCategoryId, showToast }:
   }, []);
 
   const handleStart = async () => {
-    const all    = await getEntries();
+    const [all, scoreRecords] = await Promise.all([getEntries(), getEntryScores().catch(() => [] as EntryScoreRecord[])]);
+    const scoreMap = new Map(scoreRecords.map(s => [s.entryId, s.lastScore]));
+
     const daily  = all.filter(e => e.categoryId === dailyCategoryId);
     const code   = all.filter(e => e.categoryId === codeCategoryId);
     const others = all.filter(e => e.categoryId !== dailyCategoryId && e.categoryId !== codeCategoryId);
 
     if (daily.length + code.length + others.length === 0) { showToast('笔记本中没有任何条目'); return; }
 
-    const pool: ExamCard[] = [
-      ...shuffle(daily).map(e => ({ entry: e, cardType: 'daily' as CardType })),
-      ...shuffle(code).map(e => {
+    const toCard = (e: Entry): ExamCard => {
+      if (e.categoryId === codeCategoryId) {
         const blanks = parseCodeBlanks(e.spoken);
-        return { entry: e, cardType: 'code' as CardType, blanks: blanks.length > 0 ? blanks : undefined };
-      }).filter(c => c.blanks && c.blanks.length > 0),
-      ...shuffle(others).map(e => ({ entry: e, cardType: 'english' as CardType })),
-    ];
-    const drawn = shuffle(pool).slice(0, TOTAL_CARDS);
+        return { entry: e, cardType: 'code', blanks: blanks.length > 0 ? blanks : undefined };
+      }
+      if (e.categoryId === dailyCategoryId) return { entry: e, cardType: 'daily' };
+      return { entry: e, cardType: 'english' };
+    };
+
+    // 按得分分桶：低分(<75) / 中分(75-94) / 未考过 / 高分(>=95 暂时跳过占用名额)
+    const allCards = all
+      .map(toCard)
+      .filter(c => c.cardType !== 'code' || (c.blanks && c.blanks.length > 0));
+
+    const lowCards    = shuffle(allCards.filter(c => { const s = scoreMap.get(c.entry.id); return s !== undefined && s <  75; }));
+    const midCards    = shuffle(allCards.filter(c => { const s = scoreMap.get(c.entry.id); return s !== undefined && s >= 75 && s < 95; }));
+    const newCards    = shuffle(allCards.filter(c => !scoreMap.has(c.entry.id)));
+    const highCards   = shuffle(allCards.filter(c => { const s = scoreMap.get(c.entry.id); return s !== undefined && s >= 95; }));
+
+    // 5:3:2 比例，不足时从其他桶补充
+    const want = { low: Math.round(TOTAL_CARDS * 0.5), mid: Math.round(TOTAL_CARDS * 0.3), new: TOTAL_CARDS - Math.round(TOTAL_CARDS * 0.5) - Math.round(TOTAL_CARDS * 0.3) };
+    const taken: ExamCard[] = [];
+    const take = (pool: ExamCard[], n: number) => { const got = pool.splice(0, n); taken.push(...got); };
+    take(lowCards, want.low);
+    take(midCards, want.mid);
+    take(newCards, want.new);
+
+    // 补够不足的名额：依次从剩余低→中→新→高里取
+    const leftover = shuffle([...lowCards, ...midCards, ...newCards, ...highCards]);
+    take(leftover, TOTAL_CARDS - taken.length);
+
+    const drawn = shuffle(taken).slice(0, TOTAL_CARDS);
 
     if (drawn.length === 0) { showToast('没有可用于测试的条目（代码条目需有注释行）'); return; }
 
@@ -272,14 +297,18 @@ export default function TestView({ dailyCategoryId, codeCategoryId, showToast }:
       setResultItems(items);
       setTotalScore(result.totalScore);
 
-      // 根据得分更新笔记本卡片颜色
-      await Promise.allSettled(
-        examCards.map(c => {
+      // 根据得分更新笔记本卡片颜色 + 记录分数
+      await Promise.allSettled([
+        ...examCards.map(c => {
           const fb    = fbMap.get(c.entry.id);
           const color = scoreToColor(fb?.score ?? 0);
           return updateColor(c.entry.id, color);
-        })
-      );
+        }),
+        saveEntryScores(examCards.map(c => ({
+          entryId: c.entry.id,
+          score:   fbMap.get(c.entry.id)?.score ?? 0,
+        }))),
+      ]);
 
       const elapsed = Math.round((Date.now() - startTimeRef.current) / 1000);
       await saveExamHistory({

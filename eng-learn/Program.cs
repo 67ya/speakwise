@@ -58,6 +58,15 @@ using (var scope = app.Services.CreateScope())
             PRIMARY KEY (`Id`)
         ) CHARACTER SET utf8mb4;
         """);
+    db.Database.ExecuteSqlRaw("""
+        CREATE TABLE IF NOT EXISTS `EntryScores` (
+            `EntryId`   INT          NOT NULL,
+            `LastScore` INT          NOT NULL DEFAULT 0,
+            `ExamCount` INT          NOT NULL DEFAULT 0,
+            `UpdatedAt` DATETIME(6)  NOT NULL DEFAULT CURRENT_TIMESTAMP(6),
+            PRIMARY KEY (`EntryId`)
+        ) CHARACTER SET utf8mb4;
+        """);
 }
 
 if (app.Environment.IsDevelopment())
