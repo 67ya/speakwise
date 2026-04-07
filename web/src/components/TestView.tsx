@@ -206,26 +206,25 @@ export default function TestView({ dailyCategoryId, codeCategoryId, showToast }:
     };
 
     // 按得分分桶：低分(<75) / 中分(75-94) / 未考过 / 高分(>=95 暂时跳过占用名额)
-    const allCards = all
+    const dailyCards = shuffle(all
+      .filter(e => e.categoryId === dailyCategoryId)
+      .map(toCard));
+    const otherCards = shuffle(all
+      .filter(e => e.categoryId !== dailyCategoryId)
       .map(toCard)
-      .filter(c => c.cardType !== 'code' || (c.blanks && c.blanks.length > 0));
+      .filter(c => c.cardType !== 'code' || (c.blanks && c.blanks.length > 0)));
 
-    const lowCards    = shuffle(allCards.filter(c => { const s = scoreMap.get(c.entry.id); return s !== undefined && s <  75; }));
-    const midCards    = shuffle(allCards.filter(c => { const s = scoreMap.get(c.entry.id); return s !== undefined && s >= 75 && s < 95; }));
-    const newCards    = shuffle(allCards.filter(c => !scoreMap.has(c.entry.id)));
-    const highCards   = shuffle(allCards.filter(c => { const s = scoreMap.get(c.entry.id); return s !== undefined && s >= 95; }));
+    // 80% 中英天天练，20% 其他，不足时互补
+    const wantDaily = Math.round(TOTAL_CARDS * 0.8);
+    const wantOther = TOTAL_CARDS - wantDaily;
 
-    // 5:3:2 比例，不足时从其他桶补充
-    const want = { low: Math.round(TOTAL_CARDS * 0.5), mid: Math.round(TOTAL_CARDS * 0.3), new: TOTAL_CARDS - Math.round(TOTAL_CARDS * 0.5) - Math.round(TOTAL_CARDS * 0.3) };
     const taken: ExamCard[] = [];
-    const take = (pool: ExamCard[], n: number) => { const got = pool.splice(0, n); taken.push(...got); };
-    take(lowCards, want.low);
-    take(midCards, want.mid);
-    take(newCards, want.new);
-
-    // 补够不足的名额：依次从剩余低→中→新→高里取
-    const leftover = shuffle([...lowCards, ...midCards, ...newCards, ...highCards]);
-    take(leftover, TOTAL_CARDS - taken.length);
+    const take = (pool: ExamCard[], n: number) => { taken.push(...pool.splice(0, n)); };
+    take(dailyCards, wantDaily);
+    take(otherCards, wantOther);
+    // 任一不足则从另一桶补
+    take(dailyCards, TOTAL_CARDS - taken.length);
+    take(otherCards, TOTAL_CARDS - taken.length);
 
     const drawn = shuffle(taken).slice(0, TOTAL_CARDS);
 

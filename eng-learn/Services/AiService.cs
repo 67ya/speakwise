@@ -364,8 +364,10 @@ VOCAB: <word/phrase - Chinese> | <word/phrase - Chinese>
         sb.AppendLine("  - Overall meaning has deviation: -20");
         sb.AppendLine("  - Meaning completely wrong or blank: -50");
         sb.AppendLine("For Code type (max 100 per card, 5 blanks × 20 pts each):");
-        sb.AppendLine("  - Each blank: correct = 20 pts, wrong/blank = 0 pts");
-        sb.AppendLine("  - Compare semantically, not literally — same meaning = correct");
+        sb.AppendLine("  - Each blank: full score = 20 pts, 0 pts only if completely wrong or blank");
+        sb.AppendLine("  - Be lenient: if the user's answer captures the general idea or purpose of the code, give full marks");
+        sb.AppendLine("  - Do NOT penalize for different wording, incomplete sentences, or missing technical terms — meaning matters, not phrasing");
+        sb.AppendLine("  - Only deduct if the answer is clearly about a different concept or left blank");
         sb.AppendLine();
         sb.AppendLine("Respond ONLY with this exact format, one [ANSWER] block per input:");
         sb.AppendLine();
