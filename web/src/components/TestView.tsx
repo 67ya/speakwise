@@ -2,7 +2,7 @@ import { useState, useEffect, useRef } from 'react';
 import { getEntries, updateColor } from '../api/entries';
 import { scoreExam, getExamHistory, saveExamHistory, getEntryScores, saveEntryScores } from '../api/exam';
 import type { Entry } from '../types';
-import type { ExamAnswer, AnswerFeedback, ExamHistoryRecord, EntryScoreRecord } from '../api/exam';
+import type { ExamAnswer, AnswerFeedback, ExamHistoryRecord } from '../api/exam';
 
 interface Props {
   dailyCategoryId: number | null;
@@ -187,8 +187,7 @@ export default function TestView({ dailyCategoryId, codeCategoryId, showToast }:
   }, []);
 
   const handleStart = async () => {
-    const [all, scoreRecords] = await Promise.all([getEntries(), getEntryScores().catch(() => [] as EntryScoreRecord[])]);
-    const scoreMap = new Map(scoreRecords.map(s => [s.entryId, s.lastScore]));
+    const [all] = await Promise.all([getEntries(), getEntryScores().catch(() => [])]);
 
     const daily  = all.filter(e => e.categoryId === dailyCategoryId);
     const code   = all.filter(e => e.categoryId === codeCategoryId);
